@@ -507,6 +507,7 @@ dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
   <div class="dialog-inner">
     <h2 class="dialog-title" id="dlgTitle"></h2>
     <p class="dialog-body" id="dlgBody"></p>
+    <input class="input hidden" id="dlgInput" type="text" style="width: 100%; margin: -8px 0 20px;">
     <div class="dialog-actions">
       <button class="btn btn-secondary" id="dlgCancel">Abbrechen</button>
       <button class="btn btn-danger" id="dlgOk">Löschen</button>
@@ -722,8 +723,13 @@ function askConfirm(title, message, opts) {
     $('dlgOk').textContent = o.confirmLabel;
     $('dlgOk').className = 'btn ' + (o.danger ? 'btn-danger' : 'btn-primary');
     $('dlgCancel').classList.toggle('hidden', !o.cancel);
-    const done = ok => { cleanup(); dlg.close(); resolve(ok); };
+    const inp = $('dlgInput'), hasInput = o.input !== undefined;
+    inp.classList.toggle('hidden', !hasInput);
+    inp.value = hasInput ? o.input : '';
+    // Mit Eingabefeld: liefert den getrimmten Text (oder false bei Abbruch).
+    const done = ok => { cleanup(); dlg.close(); resolve(ok && hasInput ? inp.value.trim() : ok); };
     const onOk = () => done(true);
+    const onEnter = e => { if (e.key === 'Enter') { e.preventDefault(); done(true); } };
     const onCancelBtn = () => done(false);
     const onEsc = e => { e.preventDefault(); done(false); };
     const onBackdrop = e => { if (e.target === dlg) done(false); };
@@ -732,17 +738,23 @@ function askConfirm(title, message, opts) {
       $('dlgCancel').removeEventListener('click', onCancelBtn);
       dlg.removeEventListener('cancel', onEsc);
       dlg.removeEventListener('click', onBackdrop);
+      inp.removeEventListener('keydown', onEnter);
     }
     $('dlgOk').addEventListener('click', onOk);
     $('dlgCancel').addEventListener('click', onCancelBtn);
     dlg.addEventListener('cancel', onEsc);
     dlg.addEventListener('click', onBackdrop);
+    inp.addEventListener('keydown', onEnter);
     dlg.showModal();
-    (o.cancel ? $('dlgCancel') : $('dlgOk')).focus();
+    if (hasInput) inp.select();
+    else (o.cancel ? $('dlgCancel') : $('dlgOk')).focus();
   });
 }
 function showInfo(title, message) {
   return askConfirm(title, message, { confirmLabel: 'OK', cancel: false, danger: false });
+}
+function askName(title, current) {
+  return askConfirm(title, 'Neuer Name:', { confirmLabel: 'Speichern', danger: false, input: current });
 }
 
 /* ── Daueraufträge automatisch buchen ───────────────────────────────────── */
@@ -1016,7 +1028,7 @@ function renderRec() {
 /* ── Render: Kategorien ─────────────────────────────────────────────────── */
 function renderCats() {
   const mk = (c, tagClass) =>
-    `<span class="tag ${tagClass}">${esc(c.name)}<button class="tag-x" data-cat-del="${esc(c.id)}" title="Löschen">×</button></span>`;
+    `<span class="tag ${tagClass}">${esc(c.name)}<button class="tag-x" data-cat-edit="${esc(c.id)}" title="Umbenennen">✎</button><button class="tag-x" data-cat-del="${esc(c.id)}" title="Löschen">×</button></span>`;
   $('catsAus').innerHTML = data.cats.filter(c => c.typ === 'ausgabe').map(c => mk(c, 'tag-accent-2')).join('');
   $('catsEin').innerHTML = data.cats.filter(c => c.typ === 'einnahme').map(c => mk(c, 'tag-accent')).join('');
 }
@@ -1024,7 +1036,7 @@ function renderCats() {
 /* ── Render: Personen ───────────────────────────────────────────────────── */
 function renderPersons() {
   $('personList').innerHTML = data.persons.map(p =>
-    `<span class="tag tag-neutral">${esc(p.name)}<button class="tag-x" data-person-del="${esc(p.id)}" title="Löschen">×</button></span>`).join('');
+    `<span class="tag tag-neutral">${esc(p.name)}<button class="tag-x" data-person-edit="${esc(p.id)}" title="Umbenennen">✎</button><button class="tag-x" data-person-del="${esc(p.id)}" title="Löschen">×</button></span>`).join('');
 }
 
 /* ── Render: Einstellungen ──────────────────────────────────────────────── */
@@ -1244,6 +1256,11 @@ $('addRecBtn').addEventListener('click', () => {
   save(); applyRecurring(); renderAll();
 });
 
+// Datumsfelder: Kalender bei Klick irgendwo ins Feld öffnen, nicht nur auf das Symbol.
+document.addEventListener('click', e => {
+  if (e.target.matches('input[type="date"]')) try { e.target.showPicker(); } catch (err) { /* schon offen */ }
+});
+
 // Personen
 $('addPersonBtn').addEventListener('click', () => {
   const name = $('pName').value.trim();
@@ -1271,6 +1288,16 @@ document.addEventListener('click', e => {
   askConfirm('Person löschen', msg).then(ok => {
     if (!ok) return;
     data.persons = data.persons.filter(x => x.id !== p.id);
+    save(); renderAll();
+  });
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-person-edit]'); if (!b) return;
+  const p = person(b.dataset.personEdit); if (!p) return;
+  askName('Person umbenennen', p.name).then(name => {
+    if (!name) return;
+    p.name = name;
     save(); renderAll();
   });
 });
@@ -1303,6 +1330,15 @@ document.addEventListener('click', e => {
     if (!ok) return;
     data.cats = data.cats.filter(x => x.id !== c.id);
     delete data.budgets[c.id];
+    save(); renderAll();
+  });
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-cat-edit]'); if (!b) return;
+  const c = cat(b.dataset.catEdit); if (!c) return;
+  askName('Kategorie umbenennen', c.name).then(name => {
+    if (!name) return;
+    c.name = name;
     save(); renderAll();
   });
 });
