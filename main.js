@@ -99,11 +99,14 @@ function createWindow() {
 
   win.once('ready-to-show', () => win.show());
 
-  // Externe Links (falls vorhanden) im Standardbrowser öffnen, nicht in der App.
+  // Externe http(s)-Links im Standardbrowser öffnen; alles andere (file:, data: …)
+  // wird nicht in einem neuen Fenster geöffnet.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) { shell.openExternal(url); return { action: 'deny' }; }
-    return { action: 'allow' };
+    if (/^https?:/i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
   });
+  // Navigation des Hauptfensters unterbinden (die App ist eine einzelne lokale Seite).
+  win.webContents.on('will-navigate', (e) => e.preventDefault());
 
   // Änderungen entprellt speichern; beim Schließen final sichern.
   let stateTimer = null;

@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Haushaltsbuch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +37,21 @@
   --space-1: 4.4px; --space-2: 8.8px; --space-3: 13.2px; --space-4: 17.6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+
+  /* ── Liquid-Glass-Material ───────────────────────────────────────────────
+     Durchscheinende Flächen mit Lichtkante oben, weicher Tiefe unten und
+     federndem Press-Feedback. Palette bleibt unverändert (Excel-Grün). */
+  --glass-sheen: linear-gradient(180deg,
+      rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0) 60%);
+  --glass-edge: inset 0 1px 0 rgba(255,255,255,0.45),
+                inset 0 -1px 0 rgba(43,41,39,0.06);
+  --glass-shadow: 0 1px 1px rgba(43,41,39,0.05), 0 4px 12px rgba(43,41,39,0.09);
+  --glass-shadow-hover: 0 2px 3px rgba(43,41,39,0.07), 0 8px 22px rgba(43,41,39,0.14);
+  --glass-blur: saturate(1.6) blur(12px);
+  --glass-border: rgba(43,41,39,0.22);
+  --glass-border-hover: rgba(43,41,39,0.34);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.5, 1);
+  --t-glass: 0.22s var(--ease-spring);
 }
 
 /* ── Basis ───────────────────────────────────────────────────────────────── */
@@ -49,10 +65,11 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 ::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
-.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+.text-muted { color: color-mix(in srgb, var(--color-text) 68%, transparent); }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
+  position: relative; isolation: isolate; overflow: hidden;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
@@ -60,21 +77,50 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border-radius: 999px;
+  transition: transform var(--t-glass), box-shadow var(--t-glass),
+              background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--color-accent); color: #fff; }
-.btn-primary:hover { background: var(--color-accent-700); }
-.btn-primary:active { background: var(--color-accent-800); }
-.btn-secondary { border-color: var(--color-divider); }
-.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
-.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+/* Lichtkante (Sheen) oben – gemeinsames Glas-Highlight für gefüllte Buttons. */
+.btn-primary::before, .btn-danger::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: var(--glass-sheen); pointer-events: none;
+}
+.btn:active { transform: translateY(0.5px) scale(0.985); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--color-accent-600), var(--color-accent-700));
+  color: #fff; box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+.btn-primary:hover { background: linear-gradient(180deg, var(--color-accent-600), var(--color-accent-800));
+  box-shadow: var(--glass-edge), var(--glass-shadow-hover); transform: translateY(-1px); }
+.btn-primary:active { background: linear-gradient(180deg, var(--color-accent-700), var(--color-accent-900));
+  box-shadow: var(--glass-edge), var(--glass-shadow); }
+
+.btn-secondary {
+  border-color: var(--glass-border);
+  background: var(--color-surface);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+.btn-secondary:hover { background: var(--color-neutral-100); border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-edge), var(--glass-shadow-hover); transform: translateY(-1px); }
+.btn-secondary:active { background: var(--color-neutral-200); box-shadow: var(--glass-edge), var(--glass-shadow); }
+
 .btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
-.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
-.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
-.btn-pager { padding: 4px 12px; }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 20%, transparent); }
+.btn-pager {
+  width: 32px; height: 32px; padding: 0; font-size: 18px; line-height: 1; color: var(--color-accent-700);
+  border: 1px solid var(--glass-border);
+  background: var(--color-surface);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+.btn-pager:hover { background: var(--color-neutral-100); border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-edge), var(--glass-shadow-hover); transform: translateY(-1px); }
+.btn-pager:active { background: var(--color-neutral-200); }
 .btn-sm { padding: 3px 10px; font-size: 12px; }
 .danger { color: var(--color-accent-2-700); }
-.btn-ghost.danger:hover { background: color-mix(in srgb, var(--color-accent-2-600) 10%, transparent); }
+.btn-ghost.danger:hover { background: color-mix(in srgb, var(--color-accent-2-600) 12%, transparent); }
 
 /* ── Formulare ───────────────────────────────────────────────────────────── */
 .field > label {
@@ -85,10 +131,34 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
   width: 100%; min-height: 36px; padding: 6px 14px; font: inherit;
   font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
   background: var(--color-surface);
-  border: 1px solid var(--color-divider); border-radius: 999px;
+  border: 1px solid var(--glass-border); border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 2px rgba(43,41,39,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: border-color 0.18s ease, box-shadow var(--t-glass), background-color 0.18s ease;
 }
-.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
-.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+.input:hover { border-color: var(--glass-border-hover); background: var(--color-neutral-100); }
+.input:focus-visible {
+  border-color: var(--color-accent); outline: none; background: var(--color-surface);
+  box-shadow: inset 0 1px 2px rgba(43,41,39,0.04),
+              0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+/* Zahlenfeld: etwas Luft vor den nativen Spin-Buttons. */
+.input[type="number"] { padding-right: 10px; }
+input[type="number"]::-webkit-inner-spin-button { margin-left: 4px; }
+
+/* Dropdowns: eigener Chevron statt System-Pfeil. */
+select.input {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  padding-right: 36px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23217346' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px 8px;
+}
+select.input::-ms-expand { display: none; }
+
+/* Datumsfeld: Picker-Icon dezent einfärben, klickbar bleibt die ganze Fläche. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer; opacity: 0.55; transition: opacity 0.15s ease;
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator { opacity: 0.9; }
 .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin: 0; }
 .radio input[type="checkbox"] { accent-color: var(--color-accent-600); width: 15px; height: 15px; margin: 0; cursor: pointer; }
 
@@ -124,7 +194,7 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
 /* ── Überschriften ───────────────────────────────────────────────────────── */
 h1.app-title { font-family: var(--font-heading); font-weight: 600; font-size: 28px; margin: 0; }
 .card-h { font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0; }
-.sec-h { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600; }
+.sec-h { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.72; margin: 0; font-weight: 600; }
 
 /* ── Grundgerüst: Header / Sidebar / Content ─────────────────────────────── */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
@@ -133,12 +203,24 @@ header.app-header { display: flex; align-items: center; gap: 16px; padding: 18px
 aside.sidebar { width: 230px; flex-shrink: 0; padding: 12px 0 32px 32px; display: flex; flex-direction: column; gap: 24px; }
 .sidebar nav { display: flex; flex-direction: column; gap: 6px; }
 .navbtn {
-  border: none; cursor: pointer; text-align: left; border-radius: 999px; padding: 10px 18px;
+  position: relative; isolation: isolate; overflow: hidden;
+  border: 1px solid transparent; cursor: pointer; text-align: left; border-radius: 999px; padding: 9px 16px;
   font-family: var(--font-body); font-size: 14px; font-weight: 600;
-  background: transparent; color: var(--color-text); transition: background 0.15s;
+  background: transparent; color: var(--color-text);
+  transition: background-color 0.18s ease, color 0.18s ease,
+              box-shadow var(--t-glass), transform var(--t-glass);
 }
-.navbtn:hover { background: var(--color-accent-600); color: #fff; }
-.navbtn.active { background: var(--color-accent-500); color: #fff; }
+.navbtn:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); color: var(--color-accent-800); }
+.navbtn.active {
+  background: linear-gradient(180deg, var(--color-accent-600), var(--color-accent-700));
+  color: #fff;
+  box-shadow: var(--glass-edge), 0 1px 1px rgba(43,41,39,0.05), 0 2px 6px rgba(43,41,39,0.10);
+}
+.navbtn.active::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: var(--glass-sheen); pointer-events: none;
+}
+.navbtn.active:hover { transform: translateY(-1px); box-shadow: var(--glass-edge), var(--glass-shadow-hover); color: #fff; }
 .side-card {
   display: flex; flex-direction: column; gap: 10px; padding: 18px;
   background: var(--color-surface); border-radius: var(--radius-lg);
@@ -149,15 +231,27 @@ aside.sidebar { width: 230px; flex-shrink: 0; padding: 12px 0 32px 32px; display
 main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direction: column; gap: 20px; }
 
 /* ── Pill-Umschalter (Segmented) ─────────────────────────────────────────── */
-.pillgroup { display: flex; gap: 6px; background: var(--color-neutral-100); border-radius: 999px; padding: 5px; }
+.pillgroup {
+  display: flex; gap: 6px; border-radius: 999px; padding: 5px;
+  background: var(--color-neutral-200);
+  box-shadow: inset 0 1px 2px rgba(43,41,39,0.08), inset 0 0 0 1px rgba(255,255,255,0.3);
+}
 .pillbtn {
+  position: relative; isolation: isolate; overflow: hidden;
   border: none; cursor: pointer; border-radius: 999px; padding: 6px 16px;
   font-family: var(--font-body); font-size: 13px; font-weight: 600;
-  background: transparent; color: var(--color-text); transition: background 0.15s;
+  background: transparent; color: var(--color-text);
+  transition: background-color 0.18s ease, color 0.18s ease,
+              box-shadow var(--t-glass), transform var(--t-glass);
 }
-.pillbtn:hover { background: var(--color-accent-600); color: #fff; }
-.pillbtn.active-green { background: var(--color-accent-500); color: #fff; }
-.pillbtn.active-red { background: var(--color-accent-2-500); color: #fff; }
+.pillbtn:hover { background: rgba(255,255,255,0.5); }
+.pillbtn.active-green, .pillbtn.active-red { color: #fff; box-shadow: var(--glass-edge), var(--glass-shadow); }
+.pillbtn.active-green { background: linear-gradient(180deg, var(--color-accent-600), var(--color-accent-700)); }
+.pillbtn.active-red { background: linear-gradient(180deg, var(--color-accent-2-600), var(--color-accent-2-700)); }
+.pillbtn.active-green::before, .pillbtn.active-red::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: var(--glass-sheen); pointer-events: none;
+}
 
 /* ── Übersicht ───────────────────────────────────────────────────────────── */
 .card-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -178,7 +272,7 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 .catbar-track { flex: 1; height: 16px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden; }
 .catbar-fill { height: 100%; background: var(--color-accent-2-500); border-radius: 999px; }
 .catbar-amt { width: 80px; text-align: right; font-weight: 600; }
-.empty-note { font-size: 13px; opacity: 0.6; margin: 0; }
+.empty-note { font-size: 13px; opacity: 0.75; margin: 0; }
 .trend-wrap { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
 .trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
 .trend-bars { display: flex; align-items: flex-end; gap: 4px; flex: 1; width: 100%; justify-content: center; }
@@ -205,7 +299,7 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 .budget-mid { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .budget-track { height: 12px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden; }
 .budget-fill { height: 100%; border-radius: 999px; }
-.budget-status { font-size: 12px; opacity: 0.7; }
+.budget-status { font-size: 12px; opacity: 0.78; }
 
 /* ── Daueraufträge ───────────────────────────────────────────────────────── */
 .rec-list { display: flex; flex-direction: column; gap: 10px; }
@@ -222,9 +316,14 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 .kat-col { display: flex; flex-direction: column; gap: 8px; }
 .kat-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag .tag-x {
-  border: none; background: none; cursor: pointer; color: inherit;
-  font-size: 13px; padding: 0; line-height: 1; margin-left: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border: none; cursor: pointer; color: inherit;
+  background: transparent; border-radius: 999px;
+  font-size: 13px; padding: 0; line-height: 1; margin-left: 5px;
+  transition: background-color 0.15s ease, transform 0.15s var(--ease-spring);
 }
+.tag .tag-x:hover { background: rgba(43,41,39,0.14); transform: scale(1.12); }
+.tag .tag-x:active { transform: scale(0.94); }
 .kat-form { display: flex; gap: 10px; align-items: flex-end; margin-top: 20px; flex-wrap: wrap; }
 .kat-foot {
   margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-neutral-300);
@@ -258,9 +357,10 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 }
 .start-card {
   width: min(440px, 100%);
-  background: var(--color-surface); border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5); border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   padding: 26px 28px;
-  box-shadow: 0 12px 32px color-mix(in srgb, #2b2927 22%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 16px 40px rgba(43,41,39,0.26);
 }
 .start-card p { font-size: 14px; opacity: 0.8; margin: 0 0 18px; line-height: 1.55; }
 .start-actions { display: flex; flex-direction: column; gap: 10px; }
@@ -268,19 +368,34 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 /* ── Bestätigungs-Dialog ─────────────────────────────────────────────────── */
 dialog.confirm-dlg {
   width: min(440px, calc(100vw - 32px));
-  border: none; padding: 0;
+  border: 1px solid rgba(255,255,255,0.5); padding: 0;
   border-radius: var(--radius-lg);
-  background: var(--color-surface); color: var(--color-text);
-  box-shadow: 0 12px 32px color-mix(in srgb, #2b2927 22%, transparent);
+  background: rgba(255,255,255,0.92); color: var(--color-text);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 16px 40px rgba(43,41,39,0.26);
 }
-dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
+dialog.confirm-dlg::backdrop {
+  background: rgba(43,41,39,0.4); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
 .dialog-inner { padding: 22px 24px; font-family: var(--font-body); }
 .dialog-title { font-family: var(--font-heading); font-weight: 600; font-size: 20px; margin: 0 0 10px; }
 .dialog-body { font-size: 14px; opacity: 0.85; margin: 0 0 20px; line-height: 1.55; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
-.btn-danger { background: var(--color-accent-2-600); color: #fff; }
-.btn-danger:hover { background: var(--color-accent-2-700); }
-.btn-danger:active { background: var(--color-accent-2-800); }
+.btn-danger {
+  background: linear-gradient(180deg, var(--color-accent-2-600), var(--color-accent-2-700));
+  color: #fff; box-shadow: var(--glass-edge), var(--glass-shadow);
+}
+.btn-danger:hover { background: linear-gradient(180deg, var(--color-accent-2-600), var(--color-accent-2-800));
+  box-shadow: var(--glass-edge), var(--glass-shadow-hover); transform: translateY(-1px); }
+.btn-danger:active { background: linear-gradient(180deg, var(--color-accent-2-700), var(--color-accent-2-900));
+  box-shadow: var(--glass-edge), var(--glass-shadow); }
+
+/* Bewegungsreduzierung respektieren: keine Transforms/Übergänge. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .btn:hover, .btn:active, .navbtn.active:hover, .btn-pager:hover,
+  .tag .tag-x:hover, .tag .tag-x:active { transform: none !important; }
+}
 </style>
 </head>
 <body>
@@ -317,9 +432,9 @@ dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
         <div class="card-head">
           <h2 class="card-h">Übersicht</h2>
           <div class="pager">
-            <button class="btn btn-ghost btn-pager" data-shift="-1">‹</button>
+            <button class="btn btn-ghost btn-pager" data-shift="-1" aria-label="Vorheriger Monat">‹</button>
             <strong id="uebMonthLabel">–</strong>
-            <button class="btn btn-ghost btn-pager" data-shift="1">›</button>
+            <button class="btn btn-ghost btn-pager" data-shift="1" aria-label="Nächster Monat">›</button>
           </div>
         </div>
         <div class="kpi-grid">
@@ -391,19 +506,19 @@ dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
             <button class="pillbtn" id="modeAlle">Alle</button>
           </div>
           <div class="pager pager-sm" id="tablePager">
-            <button class="btn btn-ghost btn-pager" data-shift="-1">‹</button>
+            <button class="btn btn-ghost btn-pager" data-shift="-1" aria-label="Vorheriger Monat">‹</button>
             <strong id="tblMonthLabel">–</strong>
-            <button class="btn btn-ghost btn-pager" data-shift="1">›</button>
+            <button class="btn btn-ghost btn-pager" data-shift="1" aria-label="Nächster Monat">›</button>
           </div>
           <span id="rangeWrap" class="hidden" style="display: flex; align-items: center; gap: 10px;">
-            <input class="input" type="date" id="fVon" style="width: 150px;" title="von">
+            <input class="input" type="date" id="fVon" style="width: 150px;" title="von" aria-label="Zeitraum von">
             <span style="opacity: 0.5;">–</span>
-            <input class="input" type="date" id="fBis" style="width: 150px;" title="bis">
+            <input class="input" type="date" id="fBis" style="width: 150px;" title="bis" aria-label="Zeitraum bis">
           </span>
-          <input class="input" type="search" id="fQ" placeholder="Suchen …" style="width: 170px;">
-          <select class="input" id="fFCat" style="width: 170px;"></select>
-          <select class="input" id="fFPerson" style="width: 160px;"></select>
-          <select class="input" id="fFTyp" style="width: 140px;">
+          <input class="input" type="search" id="fQ" placeholder="Suchen …" style="width: 170px;" aria-label="Buchungen durchsuchen">
+          <select class="input" id="fFCat" style="width: 170px;" aria-label="Nach Kategorie filtern"></select>
+          <select class="input" id="fFPerson" style="width: 160px;" aria-label="Nach Person filtern"></select>
+          <select class="input" id="fFTyp" style="width: 140px;" aria-label="Nach Typ filtern">
             <option value="">Alle Typen</option>
             <option value="einnahme">Einnahmen</option>
             <option value="ausgabe">Ausgaben</option>
@@ -503,7 +618,7 @@ dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
   </div>
 </div>
 
-<dialog class="confirm-dlg" id="confirmDlg">
+<dialog class="confirm-dlg" id="confirmDlg" aria-labelledby="dlgTitle" aria-describedby="dlgBody">
   <div class="dialog-inner">
     <h2 class="dialog-title" id="dlgTitle"></h2>
     <p class="dialog-body" id="dlgBody"></p>
@@ -807,8 +922,11 @@ function renderNav() {
   const budOn = data.settings.showBudgets !== false;
   document.querySelector('#mainNav [data-section="budgets"]').classList.toggle('hidden', !budOn);
   if (!budOn && ui.section === 'budgets') ui.section = 'uebersicht';
-  document.querySelectorAll('#mainNav .navbtn').forEach(b =>
-    b.classList.toggle('active', b.dataset.section === ui.section));
+  document.querySelectorAll('#mainNav .navbtn').forEach(b => {
+    const active = b.dataset.section === ui.section;
+    b.classList.toggle('active', active);
+    if (active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
   const show = {
     'sec-uebersicht': ui.section === 'uebersicht',
     'sec-form': ui.section === 'buchungen',
@@ -894,13 +1012,20 @@ function renderForm() {
   $('cancelBtn').classList.toggle('hidden', !ui.editId);
   $('typAus').className = 'pillbtn' + (ui.fTyp === 'ausgabe' ? ' active-red' : '');
   $('typEin').className = 'pillbtn' + (ui.fTyp === 'einnahme' ? ' active-green' : '');
+  $('typAus').setAttribute('aria-pressed', ui.fTyp === 'ausgabe');
+  $('typEin').setAttribute('aria-pressed', ui.fTyp === 'einnahme');
 }
 
 function fillSelect(sel, cats, keep, extraFirst) {
   const prev = keep !== undefined ? keep : sel.value;
+  const options = cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  // Zeigt die gemerkte Auswahl nicht mehr existiert (z. B. gelöschte Kategorie/Person),
+  // einen klaren Platzhalter voranstellen statt still auf die erste Option zu fallen.
+  const orphan = prev && !cats.some(c => c.id === prev);
   sel.innerHTML = (extraFirst || '') +
-    cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+    (orphan ? '<option value="" disabled selected>— nicht mehr vorhanden —</option>' : '') +
+    options;
+  if (prev && !orphan && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
 function renderCatSelects() {
@@ -953,10 +1078,14 @@ function renderTable() {
   $('rangeWrap').classList.toggle('hidden', ui.viewMode !== 'alle');
   $('modeMonat').className = 'pillbtn' + (ui.viewMode === 'monat' ? ' active-green' : '');
   $('modeAlle').className = 'pillbtn' + (ui.viewMode === 'alle' ? ' active-green' : '');
+  $('modeMonat').setAttribute('aria-pressed', ui.viewMode === 'monat');
+  $('modeAlle').setAttribute('aria-pressed', ui.viewMode === 'alle');
 
   $('theadRow').innerHTML = COLS.map(([k, label]) => {
     const ind = ui.sortKey === k ? (ui.sortDir === 'asc' ? ' ↑' : ' ↓') : '';
-    return `<th data-sort="${k}" style="text-align: ${k === 'betrag' ? 'right' : 'left'};">${label}${ind}</th>`;
+    const sort = ui.sortKey === k ? (ui.sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+    return `<th data-sort="${k}" tabindex="0" role="button" aria-sort="${sort}" ` +
+      `style="text-align: ${k === 'betrag' ? 'right' : 'left'};">${label}${ind}</th>`;
   }).join('') + '<th></th>';
 
   const rows = visibleRows();
@@ -1003,7 +1132,7 @@ function renderBudgets() {
         <div class="budget-track"><div class="budget-fill" style="width: ${Math.min(100, Math.round(pct))}%; background: ${color};"></div></div>
         <span class="budget-status">${esc(status)}</span>
       </div>
-      <input class="input" type="number" min="0" step="10" data-budget-cat="${esc(c.id)}" value="${budget || ''}" style="width: 100px; text-align: right;" placeholder="–">
+      <input class="input" type="number" min="0" step="10" data-budget-cat="${esc(c.id)}" value="${budget || ''}" style="width: 100px; text-align: right;" placeholder="–" aria-label="Budget für ${esc(c.name)}">
     </div>`;
   }).join('');
 }
@@ -1017,7 +1146,7 @@ function renderRec() {
       <label class="radio"><input type="checkbox" data-rec-toggle="${esc(r.id)}"${r.aktiv ? ' checked' : ''}><span style="font-weight: 600;">${esc(r.name)}</span></label>
       <span class="tag ${ein ? 'tag-accent' : 'tag-neutral'}">${esc(c ? c.name : '?')}</span>
       <span class="rec-day">${esc(personName(r.personId))}</span>
-      <span class="rec-day">am ${r.tag}. des Monats</span>
+      <span class="rec-day">am ${esc(r.tag)}. des Monats</span>
       <span class="rec-spacer"></span>
       <strong style="white-space: nowrap; color: var(${ein ? '--color-accent-700' : '--color-accent-2-700'});">${(ein ? '+' : '−') + fmt(r.betrag)}</strong>
       <button class="btn btn-ghost btn-sm danger" data-rec-del="${esc(r.id)}">Löschen</button>
@@ -1028,7 +1157,7 @@ function renderRec() {
 /* ── Render: Kategorien ─────────────────────────────────────────────────── */
 function renderCats() {
   const mk = (c, tagClass) =>
-    `<span class="tag ${tagClass}">${esc(c.name)}<button class="tag-x" data-cat-edit="${esc(c.id)}" title="Umbenennen">✎</button><button class="tag-x" data-cat-del="${esc(c.id)}" title="Löschen">×</button></span>`;
+    `<span class="tag ${tagClass}">${esc(c.name)}<button class="tag-x" data-cat-edit="${esc(c.id)}" title="Umbenennen" aria-label="${esc(c.name)} umbenennen">✎</button><button class="tag-x" data-cat-del="${esc(c.id)}" title="Löschen" aria-label="${esc(c.name)} löschen">×</button></span>`;
   $('catsAus').innerHTML = data.cats.filter(c => c.typ === 'ausgabe').map(c => mk(c, 'tag-accent-2')).join('');
   $('catsEin').innerHTML = data.cats.filter(c => c.typ === 'einnahme').map(c => mk(c, 'tag-accent')).join('');
 }
@@ -1036,7 +1165,7 @@ function renderCats() {
 /* ── Render: Personen ───────────────────────────────────────────────────── */
 function renderPersons() {
   $('personList').innerHTML = data.persons.map(p =>
-    `<span class="tag tag-neutral">${esc(p.name)}<button class="tag-x" data-person-edit="${esc(p.id)}" title="Umbenennen">✎</button><button class="tag-x" data-person-del="${esc(p.id)}" title="Löschen">×</button></span>`).join('');
+    `<span class="tag tag-neutral">${esc(p.name)}<button class="tag-x" data-person-edit="${esc(p.id)}" title="Umbenennen" aria-label="${esc(p.name)} umbenennen">✎</button><button class="tag-x" data-person-del="${esc(p.id)}" title="Löschen" aria-label="${esc(p.name)} löschen">×</button></span>`).join('');
 }
 
 /* ── Render: Einstellungen ──────────────────────────────────────────────── */
@@ -1055,6 +1184,13 @@ function renderMonthDependent() {
 }
 
 /* ── CSV-Export ─────────────────────────────────────────────────────────── */
+// CSV-Zelle: immer quoten und bei formelauslösenden Anfangszeichen (= + - @ Tab CR)
+// ein ' voranstellen, damit Excel/Calc den Inhalt nicht als Formel ausführt.
+function csvCell(v) {
+  let s = String(v == null ? '' : v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
 function exportCsv() {
   const lines = ['Datum;Typ;Kategorie;Beschreibung;Betrag;Person'];
   data.tx.slice().sort((a, b) => a.datum.localeCompare(b.datum)).forEach(t => {
@@ -1063,10 +1199,10 @@ function exportCsv() {
     lines.push([
       t.datum,
       t.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe',
-      c ? c.name : '',
-      '"' + (t.text || '').replace(/"/g, '""') + '"',
+      csvCell(c ? c.name : ''),
+      csvCell(t.text || ''),
       String(t.betrag.toFixed(2)).replace('.', ','),
-      '"' + pn.replace(/"/g, '""') + '"'
+      csvCell(pn)
     ].join(';'));
   });
   const blob = new Blob([String.fromCharCode(0xFEFF) + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -1108,7 +1244,7 @@ function importFile(e) {
       const typ = /ein/i.test(typRaw) ? 'einnahme' : 'ausgabe';
       const betrag = parseFloat(betragRaw.replace(/\./g, '').replace(',', '.'));
       if (!(betrag > 0)) return;
-      let c = data.cats.find(x => x.name.toLowerCase() === katName.trim().toLowerCase());
+      let c = data.cats.find(x => x.typ === typ && x.name.toLowerCase() === katName.trim().toLowerCase());
       if (!c) { c = { id: uid(), name: katName.trim() || 'Sonstiges', typ, custom: true }; data.cats.push(c); }
       let pid = defaultPersonId();
       if (personRaw && personRaw.trim()) {
@@ -1171,12 +1307,19 @@ $('cancelBtn').addEventListener('click', () => {
 });
 
 // Tabelle: Sortierung
-$('theadRow').addEventListener('click', e => {
-  const th = e.target.closest('th[data-sort]'); if (!th) return;
+function sortBy(th) {
+  if (!th) return;
   const k = th.dataset.sort;
   ui.sortDir = (ui.sortKey === k && ui.sortDir === 'desc') ? 'asc' : 'desc';
   ui.sortKey = k;
   renderTable();
+}
+$('theadRow').addEventListener('click', e => sortBy(e.target.closest('th[data-sort]')));
+// Tastaturbedienung: Enter/Leertaste sortiert die fokussierte Spaltenüberschrift.
+$('theadRow').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const th = e.target.closest('th[data-sort]'); if (!th) return;
+  e.preventDefault(); sortBy(th);
 });
 
 // Tabelle: Bearbeiten / Löschen
