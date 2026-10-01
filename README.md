@@ -48,7 +48,6 @@ npm run dist   # Installer + Portable-EXE nach dist/ bauen
 | `main.js` | Electron-Hauptprozess: Fenster, Lesen und Schreiben der Datendatei |
 | `preload.js` | Sichere IPC-Brücke (`window.hbNative`) |
 | `icon.ico` | App-Icon |
-| `design_handoff_haushaltsbuch/` | Ursprüngliche Design-Vorlage |
 
 Technik: Electron 33, electron-builder (NSIS + Portable), Windows x64.
 
