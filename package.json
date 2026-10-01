@@ -1,6 +1,6 @@
 {
   "name": "haushaltsbuch",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Haushaltsbuch – lokale Einnahmen- und Ausgabenverwaltung",
   "author": "Daniel Kronawitter",
   "license": "UNLICENSED",
@@ -17,6 +17,13 @@
     "appId": "de.kronawitter.haushaltsbuch",
     "productName": "Haushaltsbuch",
     "copyright": "© 2026 Daniel Kronawitter",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "DFK83",
+        "repo": "haushaltsbuch"
+      }
+    ],
     "files": [
       "index.html",
       "app.js",
@@ -59,5 +66,8 @@
     "portable": {
       "artifactName": "Haushaltsbuch-Portable.${ext}"
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

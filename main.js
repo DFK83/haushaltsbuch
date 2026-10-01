@@ -3,9 +3,10 @@
    Standardfenster 1400×700; Größe/Position werden gemerkt.
    Daten werden im Programmordner (bzw. Portable-Unterordner) gespeichert. */
 
-const { app, BrowserWindow, ipcMain, shell, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 const DATA_FILE = 'haushaltsbuch-daten.json';
 const WINDOW_STATE_FILE = 'fenster.json';
@@ -165,10 +166,39 @@ ipcMain.handle('hb-save', (_e, text) => {
 
 ipcMain.handle('hb-path', () => dataFilePath());
 
+// ── Auto-Update (nur installierte Version) ───────────────────────────────
+// Prüft beim Start auf eine neuere Version in den GitHub-Releases, lädt sie im
+// Hintergrund und bietet nach dem Download einen Neustart zum Installieren an.
+// Die Portable-EXE kann sich nicht selbst aktualisieren und wird übersprungen;
+// Fehler (offline, keine Rechte) werden still ignoriert.
+function setupAutoUpdate() {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-downloaded', (info) => {
+    const win = BrowserWindow.getAllWindows()[0] || null;
+    dialog.showMessageBox(win, {
+      type: 'info',
+      buttons: ['Jetzt neu starten', 'Später'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+      title: 'Update verfügbar',
+      message: 'Version ' + info.version + ' wurde heruntergeladen.',
+      detail: 'Soll Haushaltsbuch jetzt neu gestartet und aktualisiert werden? ' +
+              'Andernfalls wird das Update beim nächsten Beenden installiert.'
+    }).then((r) => { if (r.response === 0) autoUpdater.quitAndInstall(); })
+      .catch(() => { /* Dialog-Fehler ignorieren */ });
+  });
+  autoUpdater.on('error', () => { /* offline / nicht erreichbar → still */ });
+  autoUpdater.checkForUpdates().catch(() => { /* Netzwerkfehler ignorieren */ });
+}
+
 // ── App-Lebenszyklus ─────────────────────────────────────────────────────
 app.whenReady().then(() => {
   migrateFromLegacyLocation();
   createWindow();
+  setupAutoUpdate();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
