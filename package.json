@@ -1,6 +1,6 @@
 {
   "name": "haushaltsbuch",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Haushaltsbuch – lokale Einnahmen- und Ausgabenverwaltung",
   "author": "Daniel Kronawitter",
   "license": "UNLICENSED",
@@ -10,8 +10,8 @@
     "dist": "electron-builder --win --x64"
   },
   "devDependencies": {
-    "electron": "^33.4.11",
-    "electron-builder": "^25.1.8"
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "de.kronawitter.haushaltsbuch",
@@ -19,9 +19,11 @@
     "copyright": "© 2026 Daniel Kronawitter",
     "files": [
       "index.html",
+      "app.js",
       "main.js",
       "preload.js",
-      "icon.ico"
+      "icon.ico",
+      "fonts/**/*"
     ],
     "directories": {
       "output": "dist"
@@ -49,6 +51,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "menuCategory": "DFK83",
       "shortcutName": "Haushaltsbuch",
       "uninstallDisplayName": "Haushaltsbuch ${version}",
       "artifactName": "Haushaltsbuch-Setup-${version}-x64.${ext}"
