@@ -24,6 +24,9 @@ const STATE_VERSION = 2;
 //  • Portable-EXE  → Unterordner „Haushaltsbuch-Daten“ neben der EXE (wird angelegt).
 //  • Installiert   → direkt im Programmverzeichnis (Ordner der EXE).
 //  • Entwicklung   → Projektverzeichnis.
+function localBase() {
+  return process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local');
+}
 function dataDir() {
   // Portable-EXE: Daten im Unterordner neben der EXE (bleibt self-contained).
   if (process.env.PORTABLE_EXECUTABLE_DIR) {
@@ -31,26 +34,31 @@ function dataDir() {
     try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* ignore */ }
     return dir;
   }
-  // Installiert & Entwicklung: %LOCALAPPDATA%\Haushaltsbuch (nicht im Programmordner,
+  // Installiert & Entwicklung: %LOCALAPPDATA%\DFK83\Haushaltsbuch
+  // (Vendor-Ordner, passend zum Installationsordner; nicht im Programmordner,
   // der unter Program Files schreibgeschützt bzw. UAC-geschützt ist).
-  const base = process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local');
-  const dir = path.join(base, 'Haushaltsbuch');
+  const dir = path.join(localBase(), 'DFK83', 'Haushaltsbuch');
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* ignore */ }
   return dir;
 }
 
-// Einmalige Migration: Daten aus dem alten Speicherort (Programmordner neben der EXE)
-// in den neuen Ort kopieren, falls dort noch nichts liegt. Verhindert Datenverlust
-// beim Update einer installierten Version. Portable ist nicht betroffen.
+// Migration beim Start: Liegt am aktuellen Speicherort noch keine Datendatei,
+// werden die bekannten Speicherorte früherer Versionen der Reihe nach geprüft
+// (neueste zuerst) und die Daten von dort übernommen. So wandern die Daten bei
+// jeder Änderung der Installations-/Speichermethode automatisch mit.
+// Portable bleibt außen vor (dort liegen die Daten immer neben der EXE).
 function migrateFromLegacyLocation() {
   try {
     if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
     if (fs.existsSync(dataFilePath())) return;
-    const legacyDir = path.dirname(app.getPath('exe'));
-    const legacyData = path.join(legacyDir, DATA_FILE);
-    if (!fs.existsSync(legacyData)) return;
-    fs.copyFileSync(legacyData, dataFilePath());
-    const legacyState = path.join(legacyDir, WINDOW_STATE_FILE);
+    const legacyDirs = [
+      path.join(localBase(), 'Haushaltsbuch'),   // 1.0.3–1.0.5
+      path.dirname(app.getPath('exe'))           // 1.0.0–1.0.2 (neben der EXE)
+    ];
+    const src = legacyDirs.find(d => fs.existsSync(path.join(d, DATA_FILE)));
+    if (!src) return;
+    fs.copyFileSync(path.join(src, DATA_FILE), dataFilePath());
+    const legacyState = path.join(src, WINDOW_STATE_FILE);
     if (fs.existsSync(legacyState)) fs.copyFileSync(legacyState, windowStatePath());
   } catch (e) { /* Migration ist best effort */ }
 }

@@ -31,7 +31,7 @@ function seed() {
     ['kleidung', 'Kleidung', 'ausgabe'], ['sonstiges', 'Sonstiges', 'ausgabe']
   ].map(c => ({ id: c[0], name: c[1], typ: c[2], custom: false }));
   const persons = [{ id: 'p-1', name: 'Ich' }];
-  return { tx: [], cats, persons, budgets: {}, rec: [], settings: { showBudgets: true } };
+  return { tx: [], cats, persons, budgets: {}, rec: [], settings: { showBudgets: false } };
 }
 function normalize(d) {
   d = d || {};
@@ -41,7 +41,7 @@ function normalize(d) {
     persons: (Array.isArray(d.persons) && d.persons.length) ? d.persons : [{ id: 'p-1', name: 'Ich' }],
     budgets: (d.budgets && typeof d.budgets === 'object') ? d.budgets : {},
     rec: Array.isArray(d.rec) ? d.rec : [],
-    settings: { showBudgets: !(d.settings && d.settings.showBudgets === false) }
+    settings: { showBudgets: !!(d.settings && d.settings.showBudgets) }
   };
 }
 
@@ -49,6 +49,7 @@ let data = seed();
 const ui = {
   section: 'uebersicht',
   month: todayISO().slice(0, 7),
+  year: new Date().getFullYear(),
   viewMode: 'monat',
   sortKey: 'datum', sortDir: 'desc',
   fTyp: 'ausgabe',
@@ -296,6 +297,7 @@ function renderNav() {
   });
   const show = {
     'sec-uebersicht': ui.section === 'uebersicht',
+    'sec-jahr': ui.section === 'jahr',
     'sec-form': ui.section === 'buchungen',
     'sec-table': ui.section === 'buchungen',
     'sec-budgets': ui.section === 'budgets',
@@ -541,9 +543,27 @@ function renderSettings() {
 }
 
 /* ── Render: alles ──────────────────────────────────────────────────────── */
+function renderYear() {
+  const y = ui.year;
+  $('jahrLabel').textContent = String(y);
+  let tEin = 0, tAus = 0;
+  const rows = [];
+  for (let m = 1; m <= 12; m++) {
+    const mk = y + '-' + String(m).padStart(2, '0');
+    const { ein, aus } = monthSums(mk);
+    tEin += ein; tAus += aus;
+    const name = new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long' });
+    rows.push(`<tr><td>${esc(name)}</td><td>${fmt(ein)}</td><td>${fmt(aus)}</td><td>${fmt(ein - aus)}</td></tr>`);
+  }
+  rows.push(`<tr style="font-weight: 700; border-top: 2px solid var(--color-divider);"><td>Summe</td><td>${fmt(tEin)}</td><td>${fmt(tAus)}</td><td>${fmt(tEin - tAus)}</td></tr>`);
+  $('jahrTable').innerHTML = rows.join('');
+  $('jahrEin').textContent = fmt(tEin);
+  $('jahrAus').textContent = fmt(tAus);
+  $('jahrSaldo').textContent = fmt(tEin - tAus);
+}
 function renderAll() {
   renderHeader(); renderSidebar(); renderNav();
-  renderUebersicht(); renderForm(); renderCatSelects(); renderPersonSelects();
+  renderUebersicht(); renderYear(); renderForm(); renderCatSelects(); renderPersonSelects();
   renderTable(); renderBudgets(); renderRec(); renderCats(); renderPersons(); renderSettings();
 }
 function renderMonthDependent() {
@@ -643,6 +663,11 @@ document.querySelectorAll('[data-shift]').forEach(b => b.addEventListener('click
   const d = new Date(y, m - 1 + Number(b.dataset.shift), 1);
   ui.month = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   renderMonthDependent();
+}));
+// Jahr-Pager (Jahresübersicht)
+document.querySelectorAll('[data-yshift]').forEach(b => b.addEventListener('click', () => {
+  ui.year += Number(b.dataset.yshift);
+  renderYear();
 }));
 
 // Formular: Typ-Umschalter

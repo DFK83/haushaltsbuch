@@ -419,6 +419,7 @@ dialog.confirm-dlg::backdrop {
     <aside class="sidebar">
       <nav id="mainNav">
         <button class="navbtn active" data-section="uebersicht">Übersicht</button>
+        <button class="navbtn" data-section="jahr">Jahr</button>
         <button class="navbtn" data-section="buchungen">Buchungen</button>
         <button class="navbtn" data-section="budgets">Budgets</button>
         <button class="navbtn" data-section="rec">Daueraufträge</button>
@@ -470,6 +471,32 @@ dialog.confirm-dlg::backdrop {
             <table class="person-ov-table">
               <thead><tr><th>Person</th><th>Einnahmen</th><th>Ausgaben</th><th>Saldo</th></tr></thead>
               <tbody id="personOverview"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Jahresübersicht ───────────────────────────────────────────── -->
+      <section class="card hidden" id="sec-jahr">
+        <div class="card-head">
+          <h2 class="card-h">Jahresübersicht</h2>
+          <div class="pager">
+            <button class="btn btn-ghost btn-pager" data-yshift="-1" aria-label="Vorheriges Jahr">‹</button>
+            <strong id="jahrLabel">–</strong>
+            <button class="btn btn-ghost btn-pager" data-yshift="1" aria-label="Nächstes Jahr">›</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi" style="background: var(--color-accent-100);"><div class="kpi-label">Einnahmen</div><div class="kpi-num" style="color: var(--color-accent-800);" id="jahrEin">0,00&nbsp;€</div></div>
+          <div class="kpi" style="background: var(--color-accent-2-100);"><div class="kpi-label">Ausgaben</div><div class="kpi-num" style="color: var(--color-accent-2-800);" id="jahrAus">0,00&nbsp;€</div></div>
+          <div class="kpi" style="background: var(--color-surface);"><div class="kpi-label">Saldo Jahr</div><div class="kpi-num" id="jahrSaldo">0,00&nbsp;€</div></div>
+        </div>
+        <div class="person-ov">
+          <h3 class="sec-h">Monate</h3>
+          <div class="table-scroll">
+            <table class="person-ov-table">
+              <thead><tr><th>Monat</th><th>Einnahmen</th><th>Ausgaben</th><th>Saldo</th></tr></thead>
+              <tbody id="jahrTable"></tbody>
             </table>
           </div>
         </div>
