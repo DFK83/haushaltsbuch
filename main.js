@@ -24,12 +24,34 @@ const STATE_VERSION = 2;
 //  • Installiert   → direkt im Programmverzeichnis (Ordner der EXE).
 //  • Entwicklung   → Projektverzeichnis.
 function dataDir() {
+  // Portable-EXE: Daten im Unterordner neben der EXE (bleibt self-contained).
   if (process.env.PORTABLE_EXECUTABLE_DIR) {
     const dir = path.join(process.env.PORTABLE_EXECUTABLE_DIR, PORTABLE_SUBDIR);
     try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* ignore */ }
     return dir;
   }
-  return app.isPackaged ? path.dirname(app.getPath('exe')) : __dirname;
+  // Installiert & Entwicklung: %LOCALAPPDATA%\Haushaltsbuch (nicht im Programmordner,
+  // der unter Program Files schreibgeschützt bzw. UAC-geschützt ist).
+  const base = process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local');
+  const dir = path.join(base, 'Haushaltsbuch');
+  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* ignore */ }
+  return dir;
+}
+
+// Einmalige Migration: Daten aus dem alten Speicherort (Programmordner neben der EXE)
+// in den neuen Ort kopieren, falls dort noch nichts liegt. Verhindert Datenverlust
+// beim Update einer installierten Version. Portable ist nicht betroffen.
+function migrateFromLegacyLocation() {
+  try {
+    if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+    if (fs.existsSync(dataFilePath())) return;
+    const legacyDir = path.dirname(app.getPath('exe'));
+    const legacyData = path.join(legacyDir, DATA_FILE);
+    if (!fs.existsSync(legacyData)) return;
+    fs.copyFileSync(legacyData, dataFilePath());
+    const legacyState = path.join(legacyDir, WINDOW_STATE_FILE);
+    if (fs.existsSync(legacyState)) fs.copyFileSync(legacyState, windowStatePath());
+  } catch (e) { /* Migration ist best effort */ }
 }
 function dataFilePath() {
   return path.join(dataDir(), DATA_FILE);
@@ -145,6 +167,7 @@ ipcMain.handle('hb-path', () => dataFilePath());
 
 // ── App-Lebenszyklus ─────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  migrateFromLegacyLocation();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
