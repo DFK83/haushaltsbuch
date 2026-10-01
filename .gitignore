@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.claude/
+.playwright-mcp/
+ruvector.db
+haushaltsbuch-daten.json
+fenster.json
+Haushaltsbuch-Daten/

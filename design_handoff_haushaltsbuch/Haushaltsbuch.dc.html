@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23217346'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3E%E2%82%AC%3C/text%3E%3C/svg%3E" />
+<style>
+:root {
+  --font-heading: "Source Serif 4", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --color-bg: #f3f2f1; --color-surface: #ffffff; --color-text: #252423;
+  --color-accent: #217346; --color-accent-2: #4472c4;
+  --color-divider: color-mix(in srgb, #252423 16%, transparent);
+  --color-neutral-100: #f7f7f6; --color-neutral-200: #ecebe9; --color-neutral-300: #d9d7d4; --color-neutral-400: #bcbab6; --color-neutral-500: #9d9a95; --color-neutral-600: #7d7a75; --color-neutral-700: #605d58; --color-neutral-800: #43413d; --color-neutral-900: #2b2927;
+  --color-accent-100: #e8f5ec; --color-accent-200: #cfe8d7; --color-accent-300: #a4d3b4; --color-accent-400: #6fb587; --color-accent-500: #3d9163; --color-accent-600: #217346; --color-accent-700: #175c38; --color-accent-800: #10432a; --color-accent-900: #0a2c1c;
+  --color-accent-2-100: #fdecea; --color-accent-2-200: #f9d3cf; --color-accent-2-300: #f0aba4; --color-accent-2-400: #e07d73; --color-accent-2-500: #cc5449; --color-accent-2-600: #b03a30; --color-accent-2-700: #8f2b23; --color-accent-2-800: #671e18; --color-accent-2-900: #43130f;
+}
+</style>
+<style>
+html, body { margin: 0; padding: 0; background: var(--color-bg); }
+a { color: var(--color-accent-700); }
+a:hover { color: var(--color-accent-800); }
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; font-family: var(--font-body); color: var(--color-text);">
+  <header style="display: flex; align-items: center; gap: 16px; padding: 18px 32px; flex-wrap: wrap;">
+    <h1 style="font-family: var(--font-heading); font-weight: 600; font-size: 28px; margin: 0;">Haushaltsbuch</h1>
+    <span class="tag {{ saldoTagClass }}" style="font-size: 14px; display: inline-flex; gap: 5px;"><span>Saldo</span><span>{{ totalSaldoFmt }}</span></span>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; gap: 6px; background: var(--color-surface); border-radius: 999px; padding: 5px;">
+      <sc-for list="{{ layoutOpts }}" as="lo" hint-placeholder-count="3">
+        <button onClick="{{ lo.onClick }}" style="{{ lo.style }}" style-hover="background: var(--color-accent-600); color: #fff;">{{ lo.label }}</button>
+      </sc-for>
+    </div>
+  </header>
+  <div style="display: flex; flex: 1; align-items: stretch; min-height: 0;">
+    <sc-if value="{{ isSidebar }}" hint-placeholder-val="{{ true }}">
+      <aside style="width: 230px; flex-shrink: 0; padding: 12px 0 32px 32px; display: flex; flex-direction: column; gap: 24px;">
+        <nav style="display: flex; flex-direction: column; gap: 6px;">
+          <sc-for list="{{ navItems }}" as="ni" hint-placeholder-count="5">
+            <button onClick="{{ ni.onClick }}" style="{{ ni.style }}" style-hover="background: var(--color-accent-600); color: #fff;">{{ ni.label }}</button>
+          </sc-for>
+        </nav>
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; background: var(--color-surface); border-radius: var(--radius-lg);">
+          <div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6;">{{ monthLabel }}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Einnahmen</span><strong style="color: var(--color-accent-700);">{{ monthEinFmt }}</strong></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Ausgaben</span><strong style="color: var(--color-accent-2-700);">{{ monthAusFmt }}</strong></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; border-top: 1px solid var(--color-neutral-300); padding-top: 8px;"><span>Saldo</span><strong>{{ monthSaldoFmt }}</strong></div>
+        </div>
+      </aside>
+    </sc-if>
+    <main style="{{ mainStyle }}">
+      <sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; grid-column: 1 / -1;">
+          <sc-for list="{{ navItems }}" as="nt" hint-placeholder-count="5">
+            <button onClick="{{ nt.onClick }}" style="{{ nt.tabStyle }}" style-hover="background: var(--color-accent-600); color: #fff;">{{ nt.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showUeb }}" hint-placeholder-val="{{ true }}">
+        <section class="card" style="{{ fullSpan }}" data-screen-label="Übersicht">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0; flex: 1;">Übersicht</h2>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <button class="btn btn-ghost" onClick="{{ prevMonth }}" style="padding: 4px 12px;">‹</button>
+              <strong style="min-width: 130px; text-align: center; font-size: 15px;">{{ monthLabel }}</strong>
+              <button class="btn btn-ghost" onClick="{{ nextMonth }}" style="padding: 4px 12px;">›</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px;">
+            <div style="background: var(--color-accent-100); border-radius: var(--radius-md); padding: 14px 18px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65;">Einnahmen</div><div style="font-size: 24px; font-weight: 700; color: var(--color-accent-800);">{{ monthEinFmt }}</div></div>
+            <div style="background: var(--color-accent-2-100); border-radius: var(--radius-md); padding: 14px 18px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65;">Ausgaben</div><div style="font-size: 24px; font-weight: 700; color: var(--color-accent-2-800);">{{ monthAusFmt }}</div></div>
+            <div style="background: var(--color-surface); border-radius: var(--radius-md); padding: 14px 18px;"><div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65;">Saldo Monat</div><div style="font-size: 24px; font-weight: 700;">{{ monthSaldoFmt }}</div></div>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 28px; margin-top: 22px;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600;">Ausgaben nach Kategorie</h3>
+              <sc-if value="{{ hasCatBars }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <sc-for list="{{ catBars }}" as="cb" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+                      <span style="width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ cb.name }}</span>
+                      <div style="flex: 1; height: 16px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden;"><div style="{{ cb.barStyle }}"></div></div>
+                      <span style="width: 80px; text-align: right; font-weight: 600;">{{ cb.betragFmt }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noCatBars }}" hint-placeholder-val="{{ false }}"><p style="font-size: 13px; opacity: 0.6; margin: 0;">Noch keine Ausgaben in diesem Monat.</p></sc-if>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600;">Verlauf – 12 Monate</h3>
+              <div style="display: flex; align-items: flex-end; gap: 8px; height: 140px;">
+                <sc-for list="{{ trend }}" as="tm" hint-placeholder-count="12">
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end;">
+                    <div style="display: flex; align-items: flex-end; gap: 4px; flex: 1; width: 100%; justify-content: center;">
+                      <div style="{{ tm.einStyle }}" title="Einnahmen"></div>
+                      <div style="{{ tm.ausStyle }}" title="Ausgaben"></div>
+                    </div>
+                    <span style="font-size: 11px; opacity: 0.65;">{{ tm.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: flex; gap: 16px; font-size: 12px; opacity: 0.75;">
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 999px; background: var(--color-accent-500);"></span>Einnahmen</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 999px; background: var(--color-accent-2-500);"></span>Ausgaben</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showBuch }}" hint-placeholder-val="{{ true }}">
+        <section class="card" data-screen-label="Neue Buchung">
+          <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0 0 16px;">{{ formTitle }}</h2>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 6px; background: var(--color-neutral-100); border-radius: 999px; padding: 5px; align-self: flex-start;">
+              <button onClick="{{ setTypAus }}" style="{{ typAusStyle }}">Ausgabe</button>
+              <button onClick="{{ setTypEin }}" style="{{ typEinStyle }}">Einnahme</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="field"><label>Betrag (€)</label><input class="input" type="number" step="0.01" min="0" placeholder="0,00" value="{{ fBetrag }}" onChange="{{ onFBetrag }}" /></div>
+              <div class="field"><label>Datum</label><input class="input" type="date" value="{{ fDatum }}" onChange="{{ onFDatum }}" /></div>
+            </div>
+            <div class="field"><label>Kategorie</label>
+              <select class="input" value="{{ fCat }}" onChange="{{ onFCat }}">
+                <sc-for list="{{ formCatOpts }}" as="fo" hint-placeholder-count="3"><option value="{{ fo.id }}">{{ fo.name }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field"><label>Beschreibung</label><input class="input" type="text" placeholder="z. B. Wocheneinkauf" value="{{ fText }}" onChange="{{ onFText }}" /></div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-primary" onClick="{{ submitForm }}">{{ submitLabel }}</button>
+              <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ cancelEdit }}">Abbrechen</button></sc-if>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showBuch }}" hint-placeholder-val="{{ true }}">
+        <section class="card" style="{{ fullSpan }}" data-screen-label="Buchungen">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+            <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0; flex: 1;">Buchungen</h2>
+            <button class="btn btn-secondary" onClick="{{ exportCsv }}">CSV exportieren</button>
+            <button class="btn btn-secondary" onClick="{{ importClick }}">CSV importieren</button>
+            <input type="file" accept=".csv,text/csv" ref="{{ fileRef }}" onChange="{{ onImportFile }}" style="display: none;" />
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;">
+            <div style="display: flex; gap: 6px; background: var(--color-neutral-100); border-radius: 999px; padding: 5px;">
+              <button onClick="{{ setModeMonat }}" style="{{ modeMonatStyle }}">Monat</button>
+              <button onClick="{{ setModeAlle }}" style="{{ modeAlleStyle }}">Alle</button>
+            </div>
+            <sc-if value="{{ isMonat }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; align-items: center; gap: 2px;">
+                <button class="btn btn-ghost" onClick="{{ prevMonth }}" style="padding: 4px 12px;">‹</button>
+                <strong style="min-width: 120px; text-align: center; font-size: 14px;">{{ monthLabel }}</strong>
+                <button class="btn btn-ghost" onClick="{{ nextMonth }}" style="padding: 4px 12px;">›</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isAlle }}" hint-placeholder-val="{{ false }}">
+              <input class="input" type="date" value="{{ fVon }}" onChange="{{ onFVon }}" style="width: 150px;" title="von" />
+              <span style="opacity: 0.5;">–</span>
+              <input class="input" type="date" value="{{ fBis }}" onChange="{{ onFBis }}" style="width: 150px;" title="bis" />
+            </sc-if>
+            <input class="input" type="search" placeholder="Suchen …" value="{{ fQ }}" onChange="{{ onFQ }}" style="width: 170px;" />
+            <select class="input" value="{{ fFCat }}" onChange="{{ onFFCat }}" style="width: 170px;">
+              <option value="">Alle Kategorien</option>
+              <sc-for list="{{ allCatOpts }}" as="ao" hint-placeholder-count="3"><option value="{{ ao.id }}">{{ ao.name }}</option></sc-for>
+            </select>
+            <select class="input" value="{{ fFTyp }}" onChange="{{ onFFTyp }}" style="width: 140px;">
+              <option value="">Alle Typen</option>
+              <option value="einnahme">Einnahmen</option>
+              <option value="ausgabe">Ausgaben</option>
+            </select>
+          </div>
+          <div style="overflow-x: auto;">
+          <table class="table" style="width: 100%;">
+            <thead><tr>
+              <sc-for list="{{ cols }}" as="col" hint-placeholder-count="5">
+                <th onClick="{{ col.onClick }}" style="{{ col.style }}">{{ col.label }}{{ col.ind }}</th>
+              </sc-for>
+              <th></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                <tr>
+                  <td style="white-space: nowrap;">{{ r.datumFmt }}</td>
+                  <td>{{ r.text }}</td>
+                  <td><span class="tag {{ r.tagClass }}">{{ r.catName }}</span></td>
+                  <td class="text-muted">{{ r.typLabel }}</td>
+                  <td style="{{ r.betragStyle }}">{{ r.betragFmt }}</td>
+                  <td style="text-align: right; white-space: nowrap;">
+                    <button class="btn btn-ghost" onClick="{{ r.onEdit }}" style="padding: 3px 10px; font-size: 12px;">Bearbeiten</button>
+                    <button class="btn btn-ghost" onClick="{{ r.onDelete }}" style="padding: 3px 10px; font-size: 12px; color: var(--color-accent-2-700);">Löschen</button>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          </div>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><p style="font-size: 13px; opacity: 0.6; margin: 12px 0 0;">Keine Buchungen im gewählten Zeitraum.</p></sc-if>
+          <div style="display: flex; justify-content: flex-end; gap: 24px; margin-top: 12px; font-size: 14px;">
+            <span style="opacity: 0.65;">{{ rowCount }} Buchungen</span>
+            <strong>Summe: {{ sumViewFmt }}</strong>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showBud }}" hint-placeholder-val="{{ false }}">
+        <section class="card" data-screen-label="Budgets">
+          <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0 0 6px;">Monatsbudgets</h2>
+          <p style="font-size: 13px; opacity: 0.65; margin: 0 0 16px;">Budget je Ausgabenkategorie – Balken zeigt {{ monthLabel }}.</p>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{ budgetRows }}" as="b" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="width: 130px; flex-shrink: 0; font-size: 14px;">{{ b.name }}</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                  <div style="height: 12px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden;"><div style="{{ b.barStyle }}"></div></div>
+                  <span style="font-size: 12px; opacity: 0.7;">{{ b.status }}</span>
+                </div>
+                <input class="input" type="number" min="0" step="10" value="{{ b.budget }}" onChange="{{ b.onChange }}" style="width: 100px; text-align: right;" placeholder="–" />
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showRec }}" hint-placeholder-val="{{ false }}">
+        <section class="card" data-screen-label="Daueraufträge">
+          <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0 0 6px;">Wiederkehrende Buchungen</h2>
+          <p style="font-size: 13px; opacity: 0.65; margin: 0 0 16px;">Werden jeden Monat automatisch eingetragen (Miete, Abos, Gehalt …).</p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ recRows }}" as="rr" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: 10px 16px;">
+                <label class="radio" style="margin: 0;"><input type="checkbox" checked="{{ rr.aktiv }}" onChange="{{ rr.onToggle }}" /><span style="font-weight: 600;">{{ rr.name }}</span></label>
+                <span class="tag {{ rr.tagClass }}">{{ rr.catName }}</span>
+                <span style="font-size: 13px; opacity: 0.65;">am {{ rr.tag }}. des Monats</span>
+                <span style="flex: 1;"></span>
+                <strong style="{{ rr.betragStyle }}">{{ rr.betragFmt }}</strong>
+                <button class="btn btn-ghost" onClick="{{ rr.onDelete }}" style="padding: 3px 10px; font-size: 12px; color: var(--color-accent-2-700);">Löschen</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 18px;">
+            <div class="field" style="flex: 2; min-width: 140px;"><label>Name</label><input class="input" type="text" placeholder="z. B. Miete" value="{{ rName }}" onChange="{{ onRName }}" /></div>
+            <div class="field" style="width: 110px;"><label>Betrag (€)</label><input class="input" type="number" step="0.01" min="0" value="{{ rBetrag }}" onChange="{{ onRBetrag }}" /></div>
+            <div class="field" style="width: 130px;"><label>Typ</label>
+              <select class="input" value="{{ rTyp }}" onChange="{{ onRTyp }}"><option value="ausgabe">Ausgabe</option><option value="einnahme">Einnahme</option></select>
+            </div>
+            <div class="field" style="flex: 1; min-width: 140px;"><label>Kategorie</label>
+              <select class="input" value="{{ rCat }}" onChange="{{ onRCat }}">
+                <sc-for list="{{ recCatOpts }}" as="ro" hint-placeholder-count="3"><option value="{{ ro.id }}">{{ ro.name }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field" style="width: 80px;"><label>Tag</label><input class="input" type="number" min="1" max="28" value="{{ rTag }}" onChange="{{ onRTag }}" /></div>
+            <button class="btn btn-primary" onClick="{{ addRec }}">Hinzufügen</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showKat }}" hint-placeholder-val="{{ false }}">
+        <section class="card" data-screen-label="Kategorien">
+          <h2 style="font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0 0 16px;">Kategorien</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600;">Ausgaben</h3>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <sc-for list="{{ catsAus }}" as="ca" hint-placeholder-count="6">
+                  <span class="tag tag-accent-2" style="display: inline-flex; align-items: center; gap: 6px;">{{ ca.name }}<sc-if value="{{ ca.custom }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ca.onDelete }}" style="border: none; background: none; cursor: pointer; color: inherit; font-size: 13px; padding: 0; line-height: 1;" title="Löschen">×</button></sc-if></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600;">Einnahmen</h3>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <sc-for list="{{ catsEin }}" as="ce" hint-placeholder-count="3">
+                  <span class="tag tag-accent" style="display: inline-flex; align-items: center; gap: 6px;">{{ ce.name }}<sc-if value="{{ ce.custom }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ce.onDelete }}" style="border: none; background: none; cursor: pointer; color: inherit; font-size: 13px; padding: 0; line-height: 1;" title="Löschen">×</button></sc-if></span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 20px; flex-wrap: wrap;">
+            <div class="field" style="flex: 1; min-width: 160px;"><label>Neue Kategorie</label><input class="input" type="text" placeholder="Name" value="{{ kName }}" onChange="{{ onKName }}" /></div>
+            <div class="field" style="width: 140px;"><label>Typ</label>
+              <select class="input" value="{{ kTyp }}" onChange="{{ onKTyp }}"><option value="ausgabe">Ausgabe</option><option value="einnahme">Einnahme</option></select>
+            </div>
+            <button class="btn btn-primary" onClick="{{ addCat }}">Anlegen</button>
+          </div>
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-neutral-300); display: flex; align-items: center; gap: 12px;">
+            <p style="font-size: 13px; opacity: 0.65; margin: 0; flex: 1;">Alle Daten liegen lokal in deinem Browser. Sichere sie regelmäßig per CSV-Export.</p>
+            <button class="btn btn-ghost" onClick="{{ clearAll }}" style="color: var(--color-accent-2-700);">Alle Daten löschen</button>
+          </div>
+        </section>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;layout&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;sidebar&quot;, &quot;options&quot;: [&quot;sidebar&quot;, &quot;tabs&quot;, &quot;dashboard&quot;], &quot;tsType&quot;: &quot;'sidebar' | 'tabs' | 'dashboard'&quot;, &quot;section&quot;: &quot;Layout&quot;}, &quot;warnschwelle&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 80, &quot;min&quot;: 50, &quot;max&quot;: 100, &quot;step&quot;: 5, &quot;unit&quot;: &quot;%&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Budgets&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.fileRef = React.createRef();
+    const now = new Date();
+    const month = now.toISOString().slice(0, 7);
+    this.state = {
+      data: this.load(),
+      layout: null, section: 'uebersicht', month, viewMode: 'monat',
+      fQ: '', fFCat: '', fFTyp: '', fVon: '', fBis: '',
+      sortKey: 'datum', sortDir: 'desc',
+      fTyp: 'ausgabe', fBetrag: '', fDatum: now.toISOString().slice(0, 10), fCat: '', fText: '', editId: null,
+      rName: '', rBetrag: '', rTyp: 'ausgabe', rCat: '', rTag: '1',
+      kName: '', kTyp: 'ausgabe'
+    };
+  }
+  load() {
+    try { const raw = localStorage.getItem('hb-data-v1'); if (raw) return JSON.parse(raw); } catch (e) {}
+    return this.seed();
+  }
+  seed() {
+    const cats = [
+      ['gehalt', 'Gehalt', 'einnahme'], ['sonst-ein', 'Sonstige Einnahmen', 'einnahme'],
+      ['lebensmittel', 'Lebensmittel', 'ausgabe'], ['wohnen', 'Wohnen', 'ausgabe'], ['transport', 'Transport', 'ausgabe'],
+      ['freizeit', 'Freizeit', 'ausgabe'], ['gesundheit', 'Gesundheit', 'ausgabe'], ['versicherung', 'Versicherungen', 'ausgabe'],
+      ['kleidung', 'Kleidung', 'ausgabe'], ['sonstiges', 'Sonstiges', 'ausgabe']
+    ].map(c => ({ id: c[0], name: c[1], typ: c[2], custom: false }));
+    const m = new Date(); const cur = m.toISOString().slice(0, 7);
+    const prev = new Date(m.getFullYear(), m.getMonth() - 1, 15).toISOString().slice(0, 7);
+    const von = new Date(m.getFullYear(), m.getMonth() - 5, 15).toISOString().slice(0, 7);
+    const tx = [
+      { datum: prev + '-03', typ: 'ausgabe', catId: 'lebensmittel', text: 'Wocheneinkauf', betrag: 82.4 },
+      { datum: prev + '-08', typ: 'ausgabe', catId: 'freizeit', text: 'Kino', betrag: 24 },
+      { datum: prev + '-14', typ: 'ausgabe', catId: 'transport', text: 'Tanken', betrag: 68.9 },
+      { datum: prev + '-21', typ: 'ausgabe', catId: 'lebensmittel', text: 'Supermarkt', betrag: 64.15 },
+      { datum: cur + '-02', typ: 'ausgabe', catId: 'lebensmittel', text: 'Wocheneinkauf', betrag: 76.3 },
+      { datum: cur + '-06', typ: 'ausgabe', catId: 'kleidung', text: 'Schuhe', betrag: 89.99 },
+      { datum: cur + '-10', typ: 'ausgabe', catId: 'transport', text: 'Monatsticket', betrag: 49 },
+      { datum: cur + '-12', typ: 'ausgabe', catId: 'freizeit', text: 'Restaurant', betrag: 43.5 },
+      { datum: cur + '-15', typ: 'einnahme', catId: 'sonst-ein', text: 'Flohmarkt', betrag: 55 }
+    ].map(t => Object.assign({ id: this.uid() }, t));
+    const rec = [
+      { id: 'rec-miete', name: 'Miete', betrag: 950, typ: 'ausgabe', catId: 'wohnen', tag: 1, aktiv: true, von },
+      { id: 'rec-gehalt', name: 'Gehalt', betrag: 2800, typ: 'einnahme', catId: 'gehalt', tag: 1, aktiv: true, von },
+      { id: 'rec-stream', name: 'Streaming-Abo', betrag: 12.99, typ: 'ausgabe', catId: 'freizeit', tag: 5, aktiv: true, von },
+      { id: 'rec-haftpf', name: 'Haftpflicht', betrag: 8.9, typ: 'ausgabe', catId: 'versicherung', tag: 15, aktiv: true, von }
+    ];
+    return { tx, cats, budgets: { lebensmittel: 400, freizeit: 150, transport: 130, wohnen: 1000, kleidung: 100 }, rec };
+  }
+  uid() { return (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)); }
+  save(data) { this.setState({ data }); try { localStorage.setItem('hb-data-v1', JSON.stringify(data)); } catch (e) {} }
+  componentDidMount() { this.applyRecurring(); }
+  applyRecurring() {
+    const d = JSON.parse(JSON.stringify(this.state.data));
+    const today = new Date().toISOString().slice(0, 10);
+    const curMonth = today.slice(0, 7);
+    let changed = false;
+    d.rec.forEach(r => {
+      if (!r.aktiv) return;
+      let [y, mo] = (r.von || curMonth).split('-').map(Number);
+      while (true) {
+        const mk = y + '-' + String(mo).padStart(2, '0');
+        if (mk > curMonth) break;
+        const datum = mk + '-' + String(r.tag).padStart(2, '0');
+        if (datum <= today && !d.tx.some(t => t.recId === r.id && t.datum.slice(0, 7) === mk)) {
+          d.tx.push({ id: this.uid(), datum, typ: r.typ, catId: r.catId, text: r.name, betrag: r.betrag, recId: r.id });
+          changed = true;
+        }
+        mo++; if (mo > 12) { mo = 1; y++; }
+      }
+    });
+    if (changed) this.save(d);
+  }
+  fmt(n) { return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n); }
+  monthLabel(mk) { const [y, m] = mk.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }); }
+  shiftMonth(delta) {
+    const [y, m] = this.state.month.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    this.setState({ month: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') });
+  }
+  cat(id) { return this.state.data.cats.find(c => c.id === id); }
+  exportCsv() {
+    const d = this.state.data;
+    const lines = ['Datum;Typ;Kategorie;Beschreibung;Betrag'];
+    d.tx.slice().sort((a, b) => a.datum.localeCompare(b.datum)).forEach(t => {
+      const cat = this.cat(t.catId);
+      lines.push([t.datum, t.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe', cat ? cat.name : '', '"' + (t.text || '').replace(/"/g, '""') + '"', String(t.betrag.toFixed(2)).replace('.', ',')].join(';'));
+    });
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'haushaltsbuch-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  importFile(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = reader.result.replace(/^\uFEFF/, '');
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      const delim = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
+      const d = JSON.parse(JSON.stringify(this.state.data));
+      let added = 0;
+      lines.forEach((line, i) => {
+        const parts = this.splitCsv(line, delim);
+        if (i === 0 && /datum/i.test(parts[0])) return;
+        if (parts.length < 5) return;
+        const [datum, typRaw, katName, text, betragRaw] = parts;
+        if (!/^\d{4}-\d{2}-\d{2}/.test(datum)) return;
+        const typ = /ein/i.test(typRaw) ? 'einnahme' : 'ausgabe';
+        const betrag = parseFloat(betragRaw.replace(/\./g, '').replace(',', '.'));
+        if (!(betrag > 0)) return;
+        let cat = d.cats.find(c => c.name.toLowerCase() === katName.trim().toLowerCase());
+        if (!cat) { cat = { id: this.uid(), name: katName.trim() || 'Sonstiges', typ, custom: true }; d.cats.push(cat); }
+        d.tx.push({ id: this.uid(), datum: datum.slice(0, 10), typ, catId: cat.id, text: text, betrag });
+        added++;
+      });
+      this.save(d);
+      alert(added + ' Buchungen importiert.');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+  splitCsv(line, delim) {
+    const out = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQ) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === delim) { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur); return out;
+  }
+  pillStyle(active, color) {
+    return {
+      border: 'none', cursor: 'pointer', borderRadius: '999px', padding: '6px 16px',
+      fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600,
+      background: active ? 'var(--color-' + (color || 'accent') + '-500)' : 'transparent',
+      color: active ? '#fff' : 'var(--color-text)', transition: 'background 0.15s'
+    };
+  }
+  renderVals() {
+    const s = this.state, d = s.data;
+    const layout = s.layout || this.props.layout || 'sidebar';
+    const warn = Number(this.props.warnschwelle ?? 80);
+    const isDash = layout === 'dashboard';
+    const setL = l => () => this.setState({ layout: l });
+    const layoutOpts = [['sidebar', 'Sidebar'], ['tabs', 'Tabs'], ['dashboard', 'Dashboard']].map(([id, label]) => ({
+      label, onClick: setL(id), style: this.pillStyle(layout === id)
+    }));
+    const navDefs = [['uebersicht', 'Übersicht'], ['buchungen', 'Buchungen'], ['budgets', 'Budgets'], ['rec', 'Daueraufträge'], ['kategorien', 'Kategorien']];
+    const navItems = navDefs.map(([id, label]) => {
+      const active = s.section === id;
+      return {
+        label, onClick: () => this.setState({ section: id }),
+        style: {
+          border: 'none', cursor: 'pointer', textAlign: 'left', borderRadius: '999px', padding: '10px 18px',
+          fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600,
+          background: active ? 'var(--color-accent-500)' : 'transparent', color: active ? '#fff' : 'var(--color-text)'
+        },
+        tabStyle: this.pillStyle(active)
+      };
+    });
+    const monthTx = d.tx.filter(t => t.datum.slice(0, 7) === s.month);
+    const sum = (arr, typ) => arr.filter(t => t.typ === typ).reduce((a, t) => a + t.betrag, 0);
+    const monthEin = sum(monthTx, 'einnahme'), monthAus = sum(monthTx, 'ausgabe');
+    const totalSaldo = d.tx.reduce((a, t) => a + (t.typ === 'einnahme' ? t.betrag : -t.betrag), 0);
+    // table rows
+    let rows = d.tx.slice();
+    if (s.viewMode === 'monat') rows = rows.filter(t => t.datum.slice(0, 7) === s.month);
+    else { if (s.fVon) rows = rows.filter(t => t.datum >= s.fVon); if (s.fBis) rows = rows.filter(t => t.datum <= s.fBis); }
+    if (s.fQ) { const q = s.fQ.toLowerCase(); rows = rows.filter(t => (t.text || '').toLowerCase().includes(q) || (this.cat(t.catId) || {}).name?.toLowerCase().includes(q)); }
+    if (s.fFCat) rows = rows.filter(t => t.catId === s.fFCat);
+    if (s.fFTyp) rows = rows.filter(t => t.typ === s.fFTyp);
+    const dir = s.sortDir === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+      const k = s.sortKey;
+      if (k === 'betrag') return (a.betrag - b.betrag) * dir;
+      if (k === 'kategorie') return ((this.cat(a.catId) || {}).name || '').localeCompare((this.cat(b.catId) || {}).name || '') * dir;
+      if (k === 'text') return (a.text || '').localeCompare(b.text || '') * dir;
+      if (k === 'typ') return a.typ.localeCompare(b.typ) * dir;
+      return a.datum.localeCompare(b.datum) * dir;
+    });
+    const sumView = rows.reduce((a, t) => a + (t.typ === 'einnahme' ? t.betrag : -t.betrag), 0);
+    const rowVals = rows.map(t => {
+      const cat = this.cat(t.catId);
+      return {
+        datumFmt: new Date(t.datum + 'T12:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        text: t.text || '–', catName: cat ? cat.name : '?',
+        tagClass: t.typ === 'einnahme' ? 'tag-accent' : 'tag-neutral',
+        typLabel: t.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe',
+        betragFmt: (t.typ === 'einnahme' ? '+' : '−') + this.fmt(t.betrag).replace('-', ''),
+        betragStyle: { textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap', color: t.typ === 'einnahme' ? 'var(--color-accent-700)' : 'var(--color-accent-2-700)' },
+        onEdit: () => this.setState({ editId: t.id, fTyp: t.typ, fBetrag: String(t.betrag), fDatum: t.datum, fCat: t.catId, fText: t.text || '', section: 'buchungen' }),
+        onDelete: () => { const nd = JSON.parse(JSON.stringify(d)); nd.tx = nd.tx.filter(x => x.id !== t.id); this.save(nd); }
+      };
+    });
+    const colDefs = [['datum', 'Datum'], ['text', 'Beschreibung'], ['kategorie', 'Kategorie'], ['typ', 'Typ'], ['betrag', 'Betrag']];
+    const cols = colDefs.map(([k, label]) => ({
+      label, ind: s.sortKey === k ? (s.sortDir === 'asc' ? ' ↑' : ' ↓') : '',
+      style: { cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: k === 'betrag' ? 'right' : 'left' },
+      onClick: () => this.setState({ sortKey: k, sortDir: s.sortKey === k && s.sortDir === 'desc' ? 'asc' : 'desc' })
+    }));
+    // charts
+    const spentByCat = {};
+    monthTx.filter(t => t.typ === 'ausgabe').forEach(t => { spentByCat[t.catId] = (spentByCat[t.catId] || 0) + t.betrag; });
+    const maxSpent = Math.max(1, ...Object.values(spentByCat));
+    const catBars = Object.entries(spentByCat).sort((a, b) => b[1] - a[1]).map(([id, v]) => ({
+      name: (this.cat(id) || {}).name || '?', betragFmt: this.fmt(v),
+      barStyle: { height: '100%', width: Math.round(v / maxSpent * 100) + '%', background: 'var(--color-accent-2-500)', borderRadius: '999px' }
+    }));
+    const [cy, cm] = s.month.split('-').map(Number);
+    const trendData = [];
+    for (let i = 11; i >= 0; i--) {
+      const dt = new Date(cy, cm - 1 - i, 1);
+      const mk = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+      const mt = d.tx.filter(t => t.datum.slice(0, 7) === mk);
+      trendData.push({ mk, label: dt.toLocaleDateString('de-DE', { month: 'short' }), ein: sum(mt, 'einnahme'), aus: sum(mt, 'ausgabe') });
+    }
+    const maxTrend = Math.max(1, ...trendData.map(t => Math.max(t.ein, t.aus)));
+    const trend = trendData.map(t => ({
+      label: t.label,
+      einStyle: { width: '10px', borderRadius: '999px 999px 4px 4px', background: 'var(--color-accent-500)', height: Math.max(3, Math.round(t.ein / maxTrend * 110)) + 'px' },
+      ausStyle: { width: '10px', borderRadius: '999px 999px 4px 4px', background: 'var(--color-accent-2-500)', height: Math.max(3, Math.round(t.aus / maxTrend * 110)) + 'px' }
+    }));
+    // budgets
+    const budgetRows = d.cats.filter(c => c.typ === 'ausgabe').map(c => {
+      const budget = d.budgets[c.id] || 0;
+      const spent = spentByCat[c.id] || 0;
+      const pct = budget > 0 ? spent / budget * 100 : 0;
+      const over = pct > 100, warned = pct >= warn;
+      return {
+        name: c.name, budget: budget || '',
+        status: budget > 0 ? this.fmt(spent) + ' von ' + this.fmt(budget) + (over ? ' – überschritten!' : ' (' + Math.round(pct) + ' %)') : (spent > 0 ? this.fmt(spent) + ' – kein Budget' : 'kein Budget'),
+        barStyle: { height: '100%', width: Math.min(100, Math.round(pct)) + '%', borderRadius: '999px', background: over ? 'var(--color-accent-2-700)' : warned ? 'var(--color-accent-2-400)' : 'var(--color-accent-500)' },
+        onChange: e => { const nd = JSON.parse(JSON.stringify(d)); const v = parseFloat(e.target.value); if (v > 0) nd.budgets[c.id] = v; else delete nd.budgets[c.id]; this.save(nd); }
+      };
+    });
+    // recurring
+    const recRows = d.rec.map(r => {
+      const cat = this.cat(r.catId);
+      return {
+        name: r.name, tag: r.tag, aktiv: r.aktiv, catName: cat ? cat.name : '?',
+        tagClass: r.typ === 'einnahme' ? 'tag-accent' : 'tag-neutral',
+        betragFmt: (r.typ === 'einnahme' ? '+' : '−') + this.fmt(r.betrag),
+        betragStyle: { color: r.typ === 'einnahme' ? 'var(--color-accent-700)' : 'var(--color-accent-2-700)', whiteSpace: 'nowrap' },
+        onToggle: () => { const nd = JSON.parse(JSON.stringify(d)); const x = nd.rec.find(z => z.id === r.id); x.aktiv = !x.aktiv; this.save(nd); if (!r.aktiv) setTimeout(() => this.applyRecurring(), 0); },
+        onDelete: () => { const nd = JSON.parse(JSON.stringify(d)); nd.rec = nd.rec.filter(z => z.id !== r.id); this.save(nd); }
+      };
+    });
+    // categories
+    const mkCat = c => ({
+      name: c.name, custom: c.custom,
+      onDelete: () => { const nd = JSON.parse(JSON.stringify(d)); nd.cats = nd.cats.filter(x => x.id !== c.id); this.save(nd); }
+    });
+    const formCats = d.cats.filter(c => c.typ === s.fTyp);
+    const set = k => e => this.setState({ [k]: e.target.value });
+    return {
+      layoutOpts, navItems,
+      isSidebar: layout === 'sidebar', isTabs: layout === 'tabs',
+      mainStyle: Object.assign(
+        { flex: 1, minWidth: 0, padding: '10px 32px 40px', gap: '20px' },
+        isDash ? { display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'start' } : { display: 'flex', flexDirection: 'column' },
+        layout === 'tabs' ? { maxWidth: '1060px', margin: '0 auto', width: '100%', boxSizing: 'border-box' } : {}
+      ),
+      fullSpan: isDash ? { gridColumn: '1 / -1' } : {},
+      showUeb: isDash || s.section === 'uebersicht',
+      showBuch: isDash || s.section === 'buchungen',
+      showBud: isDash || s.section === 'budgets',
+      showRec: isDash || s.section === 'rec',
+      showKat: isDash || s.section === 'kategorien',
+      monthLabel: this.monthLabel(s.month),
+      prevMonth: () => this.shiftMonth(-1), nextMonth: () => this.shiftMonth(1),
+      monthEinFmt: this.fmt(monthEin), monthAusFmt: this.fmt(monthAus), monthSaldoFmt: this.fmt(monthEin - monthAus),
+      totalSaldoFmt: this.fmt(totalSaldo), saldoTagClass: totalSaldo >= 0 ? 'tag-accent' : 'tag-accent-2',
+      catBars, hasCatBars: catBars.length > 0, noCatBars: catBars.length === 0, trend,
+      rows: rowVals, noRows: rowVals.length === 0, rowCount: rowVals.length, sumViewFmt: this.fmt(sumView), cols,
+      isMonat: s.viewMode === 'monat', isAlle: s.viewMode === 'alle',
+      setModeMonat: () => this.setState({ viewMode: 'monat' }),
+      setModeAlle: () => this.setState({ viewMode: 'alle' }),
+      modeMonatStyle: this.pillStyle(s.viewMode === 'monat'),
+      modeAlleStyle: this.pillStyle(s.viewMode === 'alle'),
+      fQ: s.fQ, onFQ: set('fQ'), fFCat: s.fFCat, onFFCat: set('fFCat'), fFTyp: s.fFTyp, onFFTyp: set('fFTyp'),
+      fVon: s.fVon, onFVon: set('fVon'), fBis: s.fBis, onFBis: set('fBis'),
+      allCatOpts: d.cats.map(c => ({ id: c.id, name: c.name })),
+      formTitle: s.editId ? 'Buchung bearbeiten' : 'Neue Buchung',
+      submitLabel: s.editId ? 'Speichern' : 'Buchung hinzufügen',
+      isEditing: !!s.editId,
+      cancelEdit: () => this.setState({ editId: null, fBetrag: '', fText: '' }),
+      setTypAus: () => this.setState({ fTyp: 'ausgabe', fCat: '' }),
+      setTypEin: () => this.setState({ fTyp: 'einnahme', fCat: '' }),
+      typAusStyle: this.pillStyle(s.fTyp === 'ausgabe', 'accent-2'),
+      typEinStyle: this.pillStyle(s.fTyp === 'einnahme'),
+      fBetrag: s.fBetrag, onFBetrag: set('fBetrag'), fDatum: s.fDatum, onFDatum: set('fDatum'),
+      fCat: s.fCat || (formCats[0] || {}).id || '', onFCat: set('fCat'),
+      fText: s.fText, onFText: set('fText'),
+      formCatOpts: formCats.map(c => ({ id: c.id, name: c.name })),
+      submitForm: () => {
+        const betrag = parseFloat(String(s.fBetrag).replace(',', '.'));
+        if (!(betrag > 0) || !s.fDatum) { alert('Bitte Betrag und Datum angeben.'); return; }
+        const catId = s.fCat || (formCats[0] || {}).id;
+        const nd = JSON.parse(JSON.stringify(d));
+        if (s.editId) {
+          const t = nd.tx.find(x => x.id === s.editId);
+          Object.assign(t, { typ: s.fTyp, betrag, datum: s.fDatum, catId, text: s.fText });
+        } else nd.tx.push({ id: this.uid(), typ: s.fTyp, betrag, datum: s.fDatum, catId, text: s.fText });
+        this.save(nd);
+        this.setState({ fBetrag: '', fText: '', editId: null });
+      },
+      exportCsv: () => this.exportCsv(),
+      importClick: () => this.fileRef.current && this.fileRef.current.click(),
+      onImportFile: e => this.importFile(e),
+      fileRef: this.fileRef,
+      budgetRows, recRows,
+      rName: s.rName, onRName: set('rName'), rBetrag: s.rBetrag, onRBetrag: set('rBetrag'),
+      rTyp: s.rTyp, onRTyp: e => this.setState({ rTyp: e.target.value, rCat: '' }),
+      rCat: s.rCat || (d.cats.find(c => c.typ === s.rTyp) || {}).id || '', onRCat: set('rCat'),
+      rTag: s.rTag, onRTag: set('rTag'),
+      recCatOpts: d.cats.filter(c => c.typ === s.rTyp).map(c => ({ id: c.id, name: c.name })),
+      addRec: () => {
+        const betrag = parseFloat(String(s.rBetrag).replace(',', '.'));
+        if (!s.rName.trim() || !(betrag > 0)) { alert('Bitte Name und Betrag angeben.'); return; }
+        const nd = JSON.parse(JSON.stringify(d));
+        nd.rec.push({ id: this.uid(), name: s.rName.trim(), betrag, typ: s.rTyp, catId: s.rCat || (d.cats.find(c => c.typ === s.rTyp) || {}).id, tag: Math.min(28, Math.max(1, parseInt(s.rTag) || 1)), aktiv: true, von: s.month });
+        this.save(nd);
+        this.setState({ rName: '', rBetrag: '' });
+        setTimeout(() => this.applyRecurring(), 0);
+      },
+      catsAus: d.cats.filter(c => c.typ === 'ausgabe').map(mkCat),
+      catsEin: d.cats.filter(c => c.typ === 'einnahme').map(mkCat),
+      kName: s.kName, onKName: set('kName'), kTyp: s.kTyp, onKTyp: set('kTyp'),
+      addCat: () => {
+        if (!s.kName.trim()) return;
+        const nd = JSON.parse(JSON.stringify(d));
+        nd.cats.push({ id: this.uid(), name: s.kName.trim(), typ: s.kTyp, custom: true });
+        this.save(nd);
+        this.setState({ kName: '' });
+      },
+      clearAll: () => {
+        if (window.confirm('Wirklich alle Buchungen, Budgets und Daueraufträge löschen?')) {
+          try { localStorage.removeItem('hb-data-v1'); } catch (e) {}
+          this.save(this.seed());
+        }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

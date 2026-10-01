@@ -1,0 +1,60 @@
+{
+  "name": "haushaltsbuch",
+  "version": "1.0.0",
+  "description": "Haushaltsbuch – lokale Einnahmen- und Ausgabenverwaltung",
+  "author": "Daniel Kronawitter",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "de.kronawitter.haushaltsbuch",
+    "productName": "Haushaltsbuch",
+    "copyright": "© 2026 Daniel Kronawitter",
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "icon.ico"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Haushaltsbuch",
+      "uninstallDisplayName": "Haushaltsbuch ${version}",
+      "artifactName": "Haushaltsbuch-Setup-${version}-x64.${ext}"
+    },
+    "portable": {
+      "artifactName": "Haushaltsbuch-Portable.${ext}"
+    }
+  }
+}

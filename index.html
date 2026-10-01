@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haushaltsbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23217346'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3E%E2%82%AC%3C/text%3E%3C/svg%3E">
+<style>
+/* ── Design-Tokens (finale Werte lt. Handoff-README) ─────────────────────── */
+:root {
+  --font-heading: "Source Serif 4", Georgia, serif;
+  --font-heading-weight: 400;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+
+  --color-bg: #f3f2f1;
+  --color-surface: #ffffff;
+  --color-text: #252423;
+  --color-accent: #217346;
+  --color-divider: color-mix(in srgb, #252423 16%, transparent);
+
+  --color-neutral-100: #f7f7f6; --color-neutral-200: #ecebe9; --color-neutral-300: #d9d7d4;
+  --color-neutral-400: #bcbab6; --color-neutral-500: #9d9a95; --color-neutral-600: #7d7a75;
+  --color-neutral-700: #605d58; --color-neutral-800: #43413d; --color-neutral-900: #2b2927;
+
+  --color-accent-100: #e8f5ec; --color-accent-200: #cfe8d7; --color-accent-300: #a4d3b4;
+  --color-accent-400: #6fb587; --color-accent-500: #3d9163; --color-accent-600: #217346;
+  --color-accent-700: #175c38; --color-accent-800: #10432a; --color-accent-900: #0a2c1c;
+
+  --color-accent-2-100: #fdecea; --color-accent-2-200: #f9d3cf; --color-accent-2-300: #f0aba4;
+  --color-accent-2-400: #e07d73; --color-accent-2-500: #cc5449; --color-accent-2-600: #b03a30;
+  --color-accent-2-700: #8f2b23; --color-accent-2-800: #671e18; --color-accent-2-900: #43130f;
+
+  --space-1: 4.4px; --space-2: 8.8px; --space-3: 13.2px; --space-4: 17.6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+/* ── Basis ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--color-bg); }
+body { color: var(--color-text); font-family: var(--font-body); font-size: 14px; line-height: 1.55; }
+a { color: var(--color-accent-700); text-underline-offset: 3px; }
+a:hover { color: var(--color-accent-800); }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: 999px;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: #fff; }
+.btn-primary:hover { background: var(--color-accent-700); }
+.btn-primary:active { background: var(--color-accent-800); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-pager { padding: 4px 12px; }
+.btn-sm { padding: 3px 10px; font-size: 12px; }
+.danger { color: var(--color-accent-2-700); }
+.btn-ghost.danger:hover { background: color-mix(in srgb, var(--color-accent-2-600) 10%, transparent); }
+
+/* ── Formulare ───────────────────────────────────────────────────────────── */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 14px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: 999px;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin: 0; }
+.radio input[type="checkbox"] { accent-color: var(--color-accent-600); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+
+/* ── Karten & Tags ───────────────────────────────────────────────────────── */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-lg); background: var(--color-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, #2b2927 8%, transparent),
+              0 1px 6px color-mix(in srgb, #2b2927 5%, transparent);
+}
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px;
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+
+/* ── Tabelle ─────────────────────────────────────────────────────────────── */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2); border-bottom: 1px solid var(--color-divider);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* ── Überschriften ───────────────────────────────────────────────────────── */
+h1.app-title { font-family: var(--font-heading); font-weight: 600; font-size: 28px; margin: 0; }
+.card-h { font-family: var(--font-heading); font-weight: 600; font-size: 21px; margin: 0; }
+.sec-h { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 0; font-weight: 600; }
+
+/* ── Grundgerüst: Header / Sidebar / Content ─────────────────────────────── */
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+header.app-header { display: flex; align-items: center; gap: 16px; padding: 18px 32px; flex-wrap: wrap; }
+.shell { display: flex; flex: 1; align-items: stretch; min-height: 0; }
+aside.sidebar { width: 230px; flex-shrink: 0; padding: 12px 0 32px 32px; display: flex; flex-direction: column; gap: 24px; }
+.sidebar nav { display: flex; flex-direction: column; gap: 6px; }
+.navbtn {
+  border: none; cursor: pointer; text-align: left; border-radius: 999px; padding: 10px 18px;
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  background: transparent; color: var(--color-text); transition: background 0.15s;
+}
+.navbtn:hover { background: var(--color-accent-600); color: #fff; }
+.navbtn.active { background: var(--color-accent-500); color: #fff; }
+.side-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 18px;
+  background: var(--color-surface); border-radius: var(--radius-lg);
+}
+.side-card .month-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+.side-row { display: flex; justify-content: space-between; font-size: 14px; }
+.side-row.saldo { border-top: 1px solid var(--color-neutral-300); padding-top: 8px; }
+main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Pill-Umschalter (Segmented) ─────────────────────────────────────────── */
+.pillgroup { display: flex; gap: 6px; background: var(--color-neutral-100); border-radius: 999px; padding: 5px; }
+.pillbtn {
+  border: none; cursor: pointer; border-radius: 999px; padding: 6px 16px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  background: transparent; color: var(--color-text); transition: background 0.15s;
+}
+.pillbtn:hover { background: var(--color-accent-600); color: #fff; }
+.pillbtn.active-green { background: var(--color-accent-500); color: #fff; }
+.pillbtn.active-red { background: var(--color-accent-2-500); color: #fff; }
+
+/* ── Übersicht ───────────────────────────────────────────────────────────── */
+.card-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.card-head .card-h { flex: 1; }
+.pager { display: flex; align-items: center; gap: 4px; }
+.pager strong { min-width: 130px; text-align: center; font-size: 15px; }
+.pager.pager-sm { gap: 2px; }
+.pager.pager-sm strong { min-width: 120px; font-size: 14px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+.kpi { border-radius: var(--radius-md); padding: 14px 18px; }
+.kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; }
+.kpi-num { font-size: 24px; font-weight: 700; }
+.ueb-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 28px; margin-top: 22px; }
+.ueb-col { display: flex; flex-direction: column; gap: 10px; }
+.catbar-list { display: flex; flex-direction: column; gap: 8px; }
+.catbar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.catbar-name { width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catbar-track { flex: 1; height: 16px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden; }
+.catbar-fill { height: 100%; background: var(--color-accent-2-500); border-radius: 999px; }
+.catbar-amt { width: 80px; text-align: right; font-weight: 600; }
+.empty-note { font-size: 13px; opacity: 0.6; margin: 0; }
+.trend-wrap { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+.trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.trend-bars { display: flex; align-items: flex-end; gap: 4px; flex: 1; width: 100%; justify-content: center; }
+.trend-bar { width: 10px; border-radius: 999px 999px 4px 4px; }
+.trend-label { font-size: 11px; opacity: 0.65; }
+.legend { display: flex; gap: 16px; font-size: 12px; opacity: 0.75; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+
+/* ── Buchungen ───────────────────────────────────────────────────────────── */
+.form-col { display: flex; flex-direction: column; gap: 14px; }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.toolbar .card-h { flex: 1; }
+.filterbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.table-scroll { overflow-x: auto; }
+.table-foot { display: flex; justify-content: flex-end; gap: 24px; margin-top: 12px; font-size: 14px; }
+.table-foot .count { opacity: 0.65; }
+
+/* ── Budgets ─────────────────────────────────────────────────────────────── */
+.budget-list { display: flex; flex-direction: column; gap: 14px; }
+.budget-row { display: flex; align-items: center; gap: 12px; }
+.budget-name { width: 130px; flex-shrink: 0; font-size: 14px; }
+.budget-mid { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.budget-track { height: 12px; background: var(--color-neutral-200); border-radius: 999px; overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 999px; }
+.budget-status { font-size: 12px; opacity: 0.7; }
+
+/* ── Daueraufträge ───────────────────────────────────────────────────────── */
+.rec-list { display: flex; flex-direction: column; gap: 10px; }
+.rec-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--color-surface); border-radius: var(--radius-md); padding: 10px 16px;
+}
+.rec-day { font-size: 13px; opacity: 0.65; }
+.rec-spacer { flex: 1; }
+.rec-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 18px; }
+
+/* ── Kategorien ──────────────────────────────────────────────────────────── */
+.kat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.kat-col { display: flex; flex-direction: column; gap: 8px; }
+.kat-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag .tag-x {
+  border: none; background: none; cursor: pointer; color: inherit;
+  font-size: 13px; padding: 0; line-height: 1; margin-left: 6px;
+}
+.kat-form { display: flex; gap: 10px; align-items: flex-end; margin-top: 20px; flex-wrap: wrap; }
+.kat-foot {
+  margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-neutral-300);
+  display: flex; align-items: center; gap: 12px;
+}
+.kat-foot p { font-size: 13px; opacity: 0.65; margin: 0; flex: 1; }
+
+.hidden { display: none !important; }
+
+/* ── Übersicht: Nach Person ──────────────────────────────────────────────── */
+.person-ov { margin-top: 22px; }
+.person-ov-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.person-ov-table th {
+  text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: 6px 8px; border-bottom: 1px solid var(--color-divider); white-space: nowrap;
+}
+.person-ov-table th:first-child { text-align: left; }
+.person-ov-table td {
+  padding: 8px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+.person-ov-table td:first-child { text-align: left; font-weight: 600; }
+
+/* ── Start-Overlay (Datendatei wählen) ───────────────────────────────────── */
+.start-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  backdrop-filter: blur(3px);
+  display: grid; place-items: center; padding: 16px;
+}
+.start-card {
+  width: min(440px, 100%);
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  box-shadow: 0 12px 32px color-mix(in srgb, #2b2927 22%, transparent);
+}
+.start-card p { font-size: 14px; opacity: 0.8; margin: 0 0 18px; line-height: 1.55; }
+.start-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Bestätigungs-Dialog ─────────────────────────────────────────────────── */
+dialog.confirm-dlg {
+  width: min(440px, calc(100vw - 32px));
+  border: none; padding: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface); color: var(--color-text);
+  box-shadow: 0 12px 32px color-mix(in srgb, #2b2927 22%, transparent);
+}
+dialog.confirm-dlg::backdrop { background: rgba(43, 41, 39, 0.5); }
+.dialog-inner { padding: 22px 24px; font-family: var(--font-body); }
+.dialog-title { font-family: var(--font-heading); font-weight: 600; font-size: 20px; margin: 0 0 10px; }
+.dialog-body { font-size: 14px; opacity: 0.85; margin: 0 0 20px; line-height: 1.55; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.btn-danger { background: var(--color-accent-2-600); color: #fff; }
+.btn-danger:hover { background: var(--color-accent-2-700); }
+.btn-danger:active { background: var(--color-accent-2-800); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <h1 class="app-title">Haushaltsbuch</h1>
+    <span id="saldoTag" class="tag tag-accent" style="font-size: 14px; display: inline-flex; gap: 5px;"><span>Saldo</span><span id="saldoVal">0,00&nbsp;€</span></span>
+    <div style="flex: 1;"></div>
+    <span id="fileInfo" class="text-muted" style="font-size: 12px;"></span>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <nav id="mainNav">
+        <button class="navbtn active" data-section="uebersicht">Übersicht</button>
+        <button class="navbtn" data-section="buchungen">Buchungen</button>
+        <button class="navbtn" data-section="budgets">Budgets</button>
+        <button class="navbtn" data-section="rec">Daueraufträge</button>
+        <button class="navbtn" data-section="kategorien">Kategorien &amp; Einstellungen</button>
+      </nav>
+      <div class="side-card">
+        <div class="month-label" id="sideMonthLabel">–</div>
+        <div class="side-row"><span>Einnahmen</span><strong style="color: var(--color-accent-700);" id="sideEin">0,00&nbsp;€</strong></div>
+        <div class="side-row"><span>Ausgaben</span><strong style="color: var(--color-accent-2-700);" id="sideAus">0,00&nbsp;€</strong></div>
+        <div class="side-row saldo"><span>Saldo</span><strong id="sideSaldo">0,00&nbsp;€</strong></div>
+      </div>
+    </aside>
+
+    <main>
+
+      <!-- ── Übersicht ─────────────────────────────────────────────────── -->
+      <section class="card" id="sec-uebersicht">
+        <div class="card-head">
+          <h2 class="card-h">Übersicht</h2>
+          <div class="pager">
+            <button class="btn btn-ghost btn-pager" data-shift="-1">‹</button>
+            <strong id="uebMonthLabel">–</strong>
+            <button class="btn btn-ghost btn-pager" data-shift="1">›</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi" style="background: var(--color-accent-100);"><div class="kpi-label">Einnahmen</div><div class="kpi-num" style="color: var(--color-accent-800);" id="kpiEin">0,00&nbsp;€</div></div>
+          <div class="kpi" style="background: var(--color-accent-2-100);"><div class="kpi-label">Ausgaben</div><div class="kpi-num" style="color: var(--color-accent-2-800);" id="kpiAus">0,00&nbsp;€</div></div>
+          <div class="kpi" style="background: var(--color-surface);"><div class="kpi-label">Saldo Monat</div><div class="kpi-num" id="kpiSaldo">0,00&nbsp;€</div></div>
+        </div>
+        <div class="ueb-grid">
+          <div class="ueb-col">
+            <h3 class="sec-h">Ausgaben nach Kategorie</h3>
+            <div class="catbar-list" id="catBars"></div>
+            <p class="empty-note hidden" id="noCatBars">Noch keine Ausgaben in diesem Monat.</p>
+          </div>
+          <div class="ueb-col">
+            <h3 class="sec-h">Verlauf – 12 Monate</h3>
+            <div class="trend-wrap" id="trendChart"></div>
+            <div class="legend">
+              <span><i style="background: var(--color-accent-500);"></i>Einnahmen</span>
+              <span><i style="background: var(--color-accent-2-500);"></i>Ausgaben</span>
+            </div>
+          </div>
+        </div>
+        <div class="person-ov">
+          <h3 class="sec-h">Nach Person</h3>
+          <div class="table-scroll">
+            <table class="person-ov-table">
+              <thead><tr><th>Person</th><th>Einnahmen</th><th>Ausgaben</th><th>Saldo</th></tr></thead>
+              <tbody id="personOverview"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Buchungen: Formular ───────────────────────────────────────── -->
+      <section class="card hidden" id="sec-form">
+        <h2 class="card-h" id="formTitle" style="margin-bottom: 16px;">Neue Buchung</h2>
+        <div class="form-col">
+          <div class="pillgroup" style="align-self: flex-start;">
+            <button class="pillbtn active-red" id="typAus">Ausgabe</button>
+            <button class="pillbtn" id="typEin">Einnahme</button>
+          </div>
+          <div class="form-grid2">
+            <div class="field"><label for="fBetrag">Betrag (€)</label><input class="input" id="fBetrag" type="number" step="0.01" min="0" placeholder="0,00"></div>
+            <div class="field"><label for="fDatum">Datum</label><input class="input" id="fDatum" type="date"></div>
+          </div>
+          <div class="form-grid2">
+            <div class="field"><label for="fCat">Kategorie</label><select class="input" id="fCat"></select></div>
+            <div class="field"><label for="fPerson">Person</label><select class="input" id="fPerson"></select></div>
+          </div>
+          <div class="field"><label for="fText">Beschreibung</label><input class="input" id="fText" type="text" placeholder="z. B. Wocheneinkauf"></div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" id="submitBtn">Buchung hinzufügen</button>
+            <button class="btn btn-ghost hidden" id="cancelBtn">Abbrechen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Buchungen: Tabelle ────────────────────────────────────────── -->
+      <section class="card hidden" id="sec-table">
+        <div class="toolbar">
+          <h2 class="card-h">Buchungen</h2>
+          <button class="btn btn-secondary" id="exportBtn">CSV exportieren</button>
+          <button class="btn btn-secondary" id="importBtn">CSV importieren</button>
+          <input type="file" accept=".csv,text/csv" id="fileInput" class="hidden">
+        </div>
+        <div class="filterbar">
+          <div class="pillgroup">
+            <button class="pillbtn active-green" id="modeMonat">Monat</button>
+            <button class="pillbtn" id="modeAlle">Alle</button>
+          </div>
+          <div class="pager pager-sm" id="tablePager">
+            <button class="btn btn-ghost btn-pager" data-shift="-1">‹</button>
+            <strong id="tblMonthLabel">–</strong>
+            <button class="btn btn-ghost btn-pager" data-shift="1">›</button>
+          </div>
+          <span id="rangeWrap" class="hidden" style="display: flex; align-items: center; gap: 10px;">
+            <input class="input" type="date" id="fVon" style="width: 150px;" title="von">
+            <span style="opacity: 0.5;">–</span>
+            <input class="input" type="date" id="fBis" style="width: 150px;" title="bis">
+          </span>
+          <input class="input" type="search" id="fQ" placeholder="Suchen …" style="width: 170px;">
+          <select class="input" id="fFCat" style="width: 170px;"></select>
+          <select class="input" id="fFPerson" style="width: 160px;"></select>
+          <select class="input" id="fFTyp" style="width: 140px;">
+            <option value="">Alle Typen</option>
+            <option value="einnahme">Einnahmen</option>
+            <option value="ausgabe">Ausgaben</option>
+          </select>
+        </div>
+        <div class="table-scroll">
+          <table class="table">
+            <thead><tr id="theadRow"></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <p class="empty-note hidden" id="noRows" style="margin-top: 12px;">Keine Buchungen im gewählten Zeitraum.</p>
+        <div class="table-foot">
+          <span class="count" id="rowCount">0 Buchungen</span>
+          <strong>Summe: <span id="sumView">0,00&nbsp;€</span></strong>
+        </div>
+      </section>
+
+      <!-- ── Budgets ───────────────────────────────────────────────────── -->
+      <section class="card hidden" id="sec-budgets">
+        <h2 class="card-h" style="margin-bottom: 6px;">Monatsbudgets</h2>
+        <p style="font-size: 13px; opacity: 0.65; margin: 0 0 16px;">Budget je Ausgabenkategorie – Balken zeigt <span id="budMonthLabel">–</span>.</p>
+        <div class="budget-list" id="budgetList"></div>
+      </section>
+
+      <!-- ── Daueraufträge ─────────────────────────────────────────────── -->
+      <section class="card hidden" id="sec-rec">
+        <h2 class="card-h" style="margin-bottom: 6px;">Wiederkehrende Buchungen</h2>
+        <p style="font-size: 13px; opacity: 0.65; margin: 0 0 16px;">Werden jeden Monat automatisch eingetragen (Miete, Abos, Gehalt …).</p>
+        <div class="rec-list" id="recList"></div>
+        <div class="rec-form">
+          <div class="field" style="flex: 2; min-width: 140px;"><label for="rName">Name</label><input class="input" id="rName" type="text" placeholder="z. B. Miete"></div>
+          <div class="field" style="width: 110px;"><label for="rBetrag">Betrag (€)</label><input class="input" id="rBetrag" type="number" step="0.01" min="0"></div>
+          <div class="field" style="width: 130px;"><label for="rTyp">Typ</label>
+            <select class="input" id="rTyp"><option value="ausgabe">Ausgabe</option><option value="einnahme">Einnahme</option></select>
+          </div>
+          <div class="field" style="flex: 1; min-width: 140px;"><label for="rCat">Kategorie</label>
+            <select class="input" id="rCat"></select>
+          </div>
+          <div class="field" style="width: 130px;"><label for="rPerson">Person</label><select class="input" id="rPerson"></select></div>
+          <div class="field" style="width: 80px;"><label for="rTag">Tag</label><input class="input" id="rTag" type="number" min="1" max="28" value="1"></div>
+          <button class="btn btn-primary" id="addRecBtn">Hinzufügen</button>
+        </div>
+      </section>
+
+      <!-- ── Kategorien ────────────────────────────────────────────────── -->
+      <section class="card hidden" id="sec-kategorien">
+        <h2 class="card-h" style="margin-bottom: 16px;">Kategorien &amp; Einstellungen</h2>
+
+        <h3 class="sec-h" style="margin-bottom: 10px;">Personen</h3>
+        <div class="kat-tags" id="personList"></div>
+        <div class="kat-form" style="margin-top: 12px; margin-bottom: 6px;">
+          <div class="field" style="flex: 1; min-width: 160px;"><label for="pName">Neue Person</label><input class="input" id="pName" type="text" placeholder="Name"></div>
+          <button class="btn btn-primary" id="addPersonBtn">Hinzufügen</button>
+        </div>
+
+        <h3 class="sec-h" style="margin: 22px 0 10px; padding-top: 18px; border-top: 1px solid var(--color-neutral-300);">Kategorien</h3>
+        <div class="kat-grid">
+          <div class="kat-col">
+            <h3 class="sec-h">Ausgaben</h3>
+            <div class="kat-tags" id="catsAus"></div>
+          </div>
+          <div class="kat-col">
+            <h3 class="sec-h">Einnahmen</h3>
+            <div class="kat-tags" id="catsEin"></div>
+          </div>
+        </div>
+        <div class="kat-form">
+          <div class="field" style="flex: 1; min-width: 160px;"><label for="kName">Neue Kategorie</label><input class="input" id="kName" type="text" placeholder="Name"></div>
+          <div class="field" style="width: 140px;"><label for="kTyp">Typ</label>
+            <select class="input" id="kTyp"><option value="ausgabe">Ausgabe</option><option value="einnahme">Einnahme</option></select>
+          </div>
+          <button class="btn btn-primary" id="addCatBtn">Anlegen</button>
+        </div>
+
+        <h3 class="sec-h" style="margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--color-neutral-300);">Anzeige</h3>
+        <label class="radio" style="font-size: 14px;"><input type="checkbox" id="toggleBudgets"><span>Budgets in der Navigation anzeigen</span></label>
+
+        <div class="kat-foot">
+          <p id="katFootNote">Alle Daten liegen in deiner Datendatei. Sichere sie regelmäßig per CSV-Export.</p>
+          <button class="btn btn-secondary" id="switchFileBtn">Datendatei wechseln</button>
+          <button class="btn btn-ghost danger" id="clearAllBtn">Alle Daten löschen</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<input type="file" accept=".json,application/json" id="jsonInput" class="hidden">
+
+<div class="start-overlay hidden" id="startOverlay">
+  <div class="start-card">
+    <h2 class="card-h" style="margin-bottom: 8px;">Datendatei</h2>
+    <p id="startText"></p>
+    <div class="start-actions" id="startActions"></div>
+  </div>
+</div>
+
+<dialog class="confirm-dlg" id="confirmDlg">
+  <div class="dialog-inner">
+    <h2 class="dialog-title" id="dlgTitle"></h2>
+    <p class="dialog-body" id="dlgBody"></p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" id="dlgCancel">Abbrechen</button>
+      <button class="btn btn-danger" id="dlgOk">Löschen</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+/* ═══════════ Haushaltsbuch – Vanilla-JS-App (lokale Datendatei) ══════════ */
+
+const DATA_FILENAME = 'haushaltsbuch-daten.json';
+const JSON_TYPE = { description: 'Haushaltsbuch-Daten', accept: { 'application/json': ['.json'] } };
+const WARN_PCT = 80; // Warnschwelle Budgets in %
+
+const $ = id => document.getElementById(id);
+const fmt = n => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function uid() {
+  return (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+}
+function monthLabel(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+}
+
+/* ── Daten ──────────────────────────────────────────────────────────────── */
+function seed() {
+  // Leerer Startzustand: nur die 10 Standardkategorien.
+  const cats = [
+    ['gehalt', 'Gehalt', 'einnahme'], ['sonst-ein', 'Sonstige Einnahmen', 'einnahme'],
+    ['lebensmittel', 'Lebensmittel', 'ausgabe'], ['wohnen', 'Wohnen', 'ausgabe'], ['transport', 'Transport', 'ausgabe'],
+    ['freizeit', 'Freizeit', 'ausgabe'], ['gesundheit', 'Gesundheit', 'ausgabe'], ['versicherung', 'Versicherungen', 'ausgabe'],
+    ['kleidung', 'Kleidung', 'ausgabe'], ['sonstiges', 'Sonstiges', 'ausgabe']
+  ].map(c => ({ id: c[0], name: c[1], typ: c[2], custom: false }));
+  const persons = [{ id: 'p-1', name: 'Ich' }];
+  return { tx: [], cats, persons, budgets: {}, rec: [], settings: { showBudgets: true } };
+}
+function normalize(d) {
+  d = d || {};
+  return {
+    tx: Array.isArray(d.tx) ? d.tx : [],
+    cats: (Array.isArray(d.cats) && d.cats.length) ? d.cats : seed().cats,
+    persons: (Array.isArray(d.persons) && d.persons.length) ? d.persons : [{ id: 'p-1', name: 'Ich' }],
+    budgets: (d.budgets && typeof d.budgets === 'object') ? d.budgets : {},
+    rec: Array.isArray(d.rec) ? d.rec : [],
+    settings: { showBudgets: !(d.settings && d.settings.showBudgets === false) }
+  };
+}
+
+let data = seed();
+const ui = {
+  section: 'uebersicht',
+  month: todayISO().slice(0, 7),
+  viewMode: 'monat',
+  sortKey: 'datum', sortDir: 'desc',
+  fTyp: 'ausgabe',
+  editId: null
+};
+const cat = id => data.cats.find(c => c.id === id);
+const person = id => data.persons.find(p => p.id === id);
+const personName = id => (person(id) || {}).name || '—';
+const defaultPersonId = () => (data.persons[0] || {}).id || '';
+const sumTyp = (arr, typ) => arr.filter(t => t.typ === typ).reduce((a, t) => a + t.betrag, 0);
+
+/* ── Persistenz ─────────────────────────────────────────────────────────────
+   'native' = Desktop-App (Electron): Datei im Programmordner, automatisch.
+   'fs'     = Browser mit File System Access API (Datei im gewählten Ordner).
+   'memory' = Browser-Fallback ohne Datei-Zugriff (manueller JSON-Export). */
+let fileHandle = null;
+let persistMode = 'init';
+let saveTimer = null;
+let nativePath = '';        // Pfad der Datendatei im Desktop-Modus
+
+// Datei-Handle dauerhaft merken (IndexedDB, da Handles nicht in localStorage passen).
+function idbHandle(method, value) {
+  return new Promise((resolve, reject) => {
+    let req;
+    try { req = indexedDB.open('hb-fs', 1); } catch (e) { reject(e); return; }
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction('kv', 'readwrite');
+      const store = tx.objectStore('kv');
+      const op = method === 'set' ? store.put(value, 'handle')
+               : method === 'del' ? store.delete('handle')
+               : store.get('handle');
+      op.onsuccess = () => resolve(op.result);
+      op.onerror = () => reject(op.error);
+    };
+  });
+}
+
+async function ensurePermission(handle, request) {
+  const opts = { mode: 'readwrite' };
+  if ((await handle.queryPermission(opts)) === 'granted') return true;
+  if (request && (await handle.requestPermission(opts)) === 'granted') return true;
+  return false;
+}
+
+async function readHandle(handle) {
+  const file = await handle.getFile();
+  const text = (await file.text()).replace(/^﻿/, '');
+  if (!text.trim()) return null;               // frisch angelegte, leere Datei
+  try { return JSON.parse(text); }
+  catch (e) { throw new Error('Die Datei enthält kein gültiges Haushaltsbuch-Format.'); }
+}
+
+async function writeHandle() {
+  const w = await fileHandle.createWritable();
+  await w.write(JSON.stringify(data, null, 2));
+  await w.close();
+}
+
+// Handle übernehmen: Rechte prüfen, Daten laden bzw. aktuelle Daten hineinschreiben.
+async function useHandle(handle, preferFileData) {
+  if (!(await ensurePermission(handle, true))) throw new Error('Kein Schreibzugriff auf die Datei erlaubt.');
+  let next = data;
+  if (preferFileData) {
+    const fromFile = await readHandle(handle);   // kann Parse-Fehler werfen
+    next = fromFile ? normalize(fromFile) : seed();
+  }
+  fileHandle = handle;
+  persistMode = 'fs';
+  data = next;
+  try { await idbHandle('set', handle); } catch (e) {}
+  await writeHandle();                            // legt Datei an / spiegelt aktuellen Stand
+  updateFileInfo();
+}
+
+function updateFileInfo(msg) {
+  if (persistMode === 'native') {
+    const fname = (nativePath.split(/[\\/]/).pop()) || DATA_FILENAME;
+    $('fileInfo').textContent = msg ? msg : '📄 ' + fname;
+    $('katFootNote').textContent = 'Alle Daten werden automatisch im Programmordner gespeichert' + (nativePath ? ' (' + nativePath + ')' : '') + '. Kein Browser-Speicher.';
+    $('switchFileBtn').classList.add('hidden');
+  } else if (persistMode === 'fs') {
+    $('fileInfo').textContent = msg ? msg : '📄 ' + fileHandle.name;
+    $('katFootNote').textContent = 'Alle Daten liegen in der Datei „' + fileHandle.name + '“ (Ordner Dokumente o. Ä.) und werden nach jeder Änderung automatisch gespeichert. Kein Browser-Speicher.';
+    $('switchFileBtn').textContent = 'Datendatei wechseln';
+  } else {
+    $('fileInfo').textContent = '⚠ Kein Datei-Zugriff';
+    $('katFootNote').textContent = 'Dein Browser kann keine lokale Datei beschreiben – sichere die Daten manuell als JSON.';
+    $('switchFileBtn').textContent = 'Daten als JSON sichern';
+  }
+}
+
+let saveFlashTimer = null;
+function flashSaved() {
+  if (persistMode !== 'fs' && persistMode !== 'native') return;
+  $('fileInfo').textContent = '✓ gespeichert';
+  clearTimeout(saveFlashTimer);
+  saveFlashTimer = setTimeout(() => updateFileInfo(), 1200);
+}
+
+// Schreibt den aktuellen Stand je nach Modus in die Datei.
+async function persistWrite() {
+  if (persistMode === 'native') {
+    const r = await window.hbNative.save(JSON.stringify(data, null, 2));
+    if (r && r.ok === false) throw new Error(r.error || 'unbekannter Fehler');
+  } else if (persistMode === 'fs' && fileHandle) {
+    await writeHandle();
+  }
+}
+
+async function saveNow() {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (persistMode !== 'fs' && persistMode !== 'native') return;
+  try { await persistWrite(); flashSaved(); }
+  catch (e) { onWriteError(e); }
+}
+
+// Von überall aufgerufen: schreibt entprellt in die Datei.
+function save() {
+  if (persistMode !== 'fs' && persistMode !== 'native') return;   // Memory-Modus: nur manueller JSON-Export
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveNow(); }, 250);
+}
+
+function onWriteError(e) {
+  const detail = e && e.message ? e.message : e;
+  if (persistMode === 'native') {
+    showInfo('Speichern fehlgeschlagen', 'Die Datei im Programmordner konnte nicht geschrieben werden (' + detail + ').');
+    return;
+  }
+  showInfo('Speichern fehlgeschlagen', 'Die Datei konnte nicht geschrieben werden (' + detail + '). Wähle die Datendatei bitte erneut aus.')
+    .then(() => renderPickerOverlay(true));
+}
+
+// Manueller JSON-Download (Memory-Fallback).
+function downloadJson() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = DATA_FILENAME;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ── Bestätigungs-Dialog ────────────────────────────────────────────────── */
+function askConfirm(title, message, opts) {
+  const o = Object.assign({ confirmLabel: 'Löschen', cancel: true, danger: true }, opts);
+  return new Promise(resolve => {
+    const dlg = $('confirmDlg');
+    $('dlgTitle').textContent = title;
+    $('dlgBody').textContent = message;
+    $('dlgOk').textContent = o.confirmLabel;
+    $('dlgOk').className = 'btn ' + (o.danger ? 'btn-danger' : 'btn-primary');
+    $('dlgCancel').classList.toggle('hidden', !o.cancel);
+    const done = ok => { cleanup(); dlg.close(); resolve(ok); };
+    const onOk = () => done(true);
+    const onCancelBtn = () => done(false);
+    const onEsc = e => { e.preventDefault(); done(false); };
+    const onBackdrop = e => { if (e.target === dlg) done(false); };
+    function cleanup() {
+      $('dlgOk').removeEventListener('click', onOk);
+      $('dlgCancel').removeEventListener('click', onCancelBtn);
+      dlg.removeEventListener('cancel', onEsc);
+      dlg.removeEventListener('click', onBackdrop);
+    }
+    $('dlgOk').addEventListener('click', onOk);
+    $('dlgCancel').addEventListener('click', onCancelBtn);
+    dlg.addEventListener('cancel', onEsc);
+    dlg.addEventListener('click', onBackdrop);
+    dlg.showModal();
+    (o.cancel ? $('dlgCancel') : $('dlgOk')).focus();
+  });
+}
+function showInfo(title, message) {
+  return askConfirm(title, message, { confirmLabel: 'OK', cancel: false, danger: false });
+}
+
+/* ── Daueraufträge automatisch buchen ───────────────────────────────────── */
+function applyRecurring() {
+  const today = todayISO();
+  const curMonth = today.slice(0, 7);
+  let changed = false;
+  data.rec.forEach(r => {
+    if (!r.aktiv) return;
+    let [y, mo] = (r.von || curMonth).split('-').map(Number);
+    if (!y || !mo) return;
+    while (true) {
+      const mk = y + '-' + String(mo).padStart(2, '0');
+      if (mk > curMonth) break;
+      const datum = mk + '-' + String(r.tag).padStart(2, '0');
+      if (datum <= today && !data.tx.some(t => t.recId === r.id && t.datum.slice(0, 7) === mk)) {
+        data.tx.push({ id: uid(), datum, typ: r.typ, catId: r.catId, text: r.name, betrag: r.betrag, recId: r.id, personId: r.personId || defaultPersonId() });
+        changed = true;
+      }
+      mo++; if (mo > 12) { mo = 1; y++; }
+    }
+  });
+  if (changed) save();
+}
+
+/* ── Render: Header & Sidebar ───────────────────────────────────────────── */
+function renderHeader() {
+  const total = data.tx.reduce((a, t) => a + (t.typ === 'einnahme' ? t.betrag : -t.betrag), 0);
+  $('saldoVal').textContent = fmt(total);
+  $('saldoTag').className = 'tag ' + (total >= 0 ? 'tag-accent' : 'tag-accent-2');
+  $('saldoTag').style.cssText = 'font-size: 14px; display: inline-flex; gap: 5px;';
+}
+
+function monthSums(mk) {
+  const mt = data.tx.filter(t => t.datum.slice(0, 7) === mk);
+  const ein = mt.filter(t => t.typ === 'einnahme').reduce((a, t) => a + t.betrag, 0);
+  const aus = mt.filter(t => t.typ === 'ausgabe').reduce((a, t) => a + t.betrag, 0);
+  return { ein, aus };
+}
+
+function renderSidebar() {
+  const { ein, aus } = monthSums(ui.month);
+  $('sideMonthLabel').textContent = monthLabel(ui.month);
+  $('sideEin').textContent = fmt(ein);
+  $('sideAus').textContent = fmt(aus);
+  $('sideSaldo').textContent = fmt(ein - aus);
+}
+
+function renderNav() {
+  const budOn = data.settings.showBudgets !== false;
+  document.querySelector('#mainNav [data-section="budgets"]').classList.toggle('hidden', !budOn);
+  if (!budOn && ui.section === 'budgets') ui.section = 'uebersicht';
+  document.querySelectorAll('#mainNav .navbtn').forEach(b =>
+    b.classList.toggle('active', b.dataset.section === ui.section));
+  const show = {
+    'sec-uebersicht': ui.section === 'uebersicht',
+    'sec-form': ui.section === 'buchungen',
+    'sec-table': ui.section === 'buchungen',
+    'sec-budgets': ui.section === 'budgets',
+    'sec-rec': ui.section === 'rec',
+    'sec-kategorien': ui.section === 'kategorien'
+  };
+  Object.entries(show).forEach(([id, on]) => $(id).classList.toggle('hidden', !on));
+}
+
+/* ── Render: Übersicht ──────────────────────────────────────────────────── */
+function renderUebersicht() {
+  $('uebMonthLabel').textContent = monthLabel(ui.month);
+  const { ein, aus } = monthSums(ui.month);
+  $('kpiEin').textContent = fmt(ein);
+  $('kpiAus').textContent = fmt(aus);
+  $('kpiSaldo').textContent = fmt(ein - aus);
+
+  // Ausgaben nach Kategorie
+  const spent = spentByCat(ui.month);
+  const entries = Object.entries(spent).sort((a, b) => b[1] - a[1]);
+  const maxSpent = Math.max(1, ...entries.map(e => e[1]));
+  $('catBars').innerHTML = entries.map(([id, v]) => `
+    <div class="catbar-row">
+      <span class="catbar-name">${esc((cat(id) || {}).name || '?')}</span>
+      <div class="catbar-track"><div class="catbar-fill" style="width: ${Math.round(v / maxSpent * 100)}%;"></div></div>
+      <span class="catbar-amt">${fmt(v)}</span>
+    </div>`).join('');
+  $('noCatBars').classList.toggle('hidden', entries.length > 0);
+
+  renderPersonOverview();
+
+  // Verlauf 12 Monate
+  const [cy, cm] = ui.month.split('-').map(Number);
+  const trend = [];
+  for (let i = 11; i >= 0; i--) {
+    const dt = new Date(cy, cm - 1 - i, 1);
+    const mk = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+    const s = monthSums(mk);
+    trend.push({ label: dt.toLocaleDateString('de-DE', { month: 'short' }), ein: s.ein, aus: s.aus });
+  }
+  const maxTrend = Math.max(1, ...trend.map(t => Math.max(t.ein, t.aus)));
+  const h = v => Math.max(3, Math.round(v / maxTrend * 110));
+  $('trendChart').innerHTML = trend.map(t => `
+    <div class="trend-col">
+      <div class="trend-bars">
+        <div class="trend-bar" style="background: var(--color-accent-500); height: ${h(t.ein)}px;" title="Einnahmen"></div>
+        <div class="trend-bar" style="background: var(--color-accent-2-500); height: ${h(t.aus)}px;" title="Ausgaben"></div>
+      </div>
+      <span class="trend-label">${esc(t.label)}</span>
+    </div>`).join('');
+}
+
+function spentByCat(mk) {
+  const out = {};
+  data.tx.filter(t => t.typ === 'ausgabe' && t.datum.slice(0, 7) === mk)
+    .forEach(t => { out[t.catId] = (out[t.catId] || 0) + t.betrag; });
+  return out;
+}
+
+function renderPersonOverview() {
+  const monthTx = data.tx.filter(t => t.datum.slice(0, 7) === ui.month);
+  const rows = data.persons.map(p => {
+    const pt = monthTx.filter(t => t.personId === p.id);
+    return { name: p.name, ein: sumTyp(pt, 'einnahme'), aus: sumTyp(pt, 'ausgabe') };
+  });
+  const orphan = monthTx.filter(t => !data.persons.some(p => p.id === t.personId));
+  if (orphan.length) rows.push({ name: 'Ohne Person', ein: sumTyp(orphan, 'einnahme'), aus: sumTyp(orphan, 'ausgabe') });
+  $('personOverview').innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.name)}</td>
+      <td style="color: var(--color-accent-700);">${fmt(r.ein)}</td>
+      <td style="color: var(--color-accent-2-700);">${fmt(r.aus)}</td>
+      <td style="font-weight: 600;">${fmt(r.ein - r.aus)}</td>
+    </tr>`).join('');
+}
+
+/* ── Render: Buchungen (Formular) ───────────────────────────────────────── */
+function renderForm() {
+  $('formTitle').textContent = ui.editId ? 'Buchung bearbeiten' : 'Neue Buchung';
+  $('submitBtn').textContent = ui.editId ? 'Speichern' : 'Buchung hinzufügen';
+  $('cancelBtn').classList.toggle('hidden', !ui.editId);
+  $('typAus').className = 'pillbtn' + (ui.fTyp === 'ausgabe' ? ' active-red' : '');
+  $('typEin').className = 'pillbtn' + (ui.fTyp === 'einnahme' ? ' active-green' : '');
+}
+
+function fillSelect(sel, cats, keep, extraFirst) {
+  const prev = keep !== undefined ? keep : sel.value;
+  sel.innerHTML = (extraFirst || '') +
+    cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+
+function renderCatSelects() {
+  fillSelect($('fCat'), data.cats.filter(c => c.typ === ui.fTyp));
+  fillSelect($('fFCat'), data.cats, undefined, '<option value="">Alle Kategorien</option>');
+  fillSelect($('rCat'), data.cats.filter(c => c.typ === $('rTyp').value));
+}
+
+function renderPersonSelects() {
+  fillSelect($('fPerson'), data.persons);
+  fillSelect($('rPerson'), data.persons);
+  fillSelect($('fFPerson'), data.persons, undefined, '<option value="">Alle Personen</option>');
+}
+
+/* ── Render: Buchungen (Tabelle) ────────────────────────────────────────── */
+const COLS = [['datum', 'Datum'], ['text', 'Beschreibung'], ['kategorie', 'Kategorie'], ['person', 'Person'], ['typ', 'Typ'], ['betrag', 'Betrag']];
+
+function visibleRows() {
+  let rows = data.tx.slice();
+  if (ui.viewMode === 'monat') {
+    rows = rows.filter(t => t.datum.slice(0, 7) === ui.month);
+  } else {
+    const von = $('fVon').value, bis = $('fBis').value;
+    if (von) rows = rows.filter(t => t.datum >= von);
+    if (bis) rows = rows.filter(t => t.datum <= bis);
+  }
+  const q = $('fQ').value.trim().toLowerCase();
+  if (q) rows = rows.filter(t => (t.text || '').toLowerCase().includes(q) || ((cat(t.catId) || {}).name || '').toLowerCase().includes(q) || personName(t.personId).toLowerCase().includes(q));
+  const fc = $('fFCat').value;
+  if (fc) rows = rows.filter(t => t.catId === fc);
+  const fp = $('fFPerson').value;
+  if (fp) rows = rows.filter(t => t.personId === fp);
+  const ft = $('fFTyp').value;
+  if (ft) rows = rows.filter(t => t.typ === ft);
+  const dir = ui.sortDir === 'asc' ? 1 : -1, k = ui.sortKey;
+  rows.sort((a, b) => {
+    if (k === 'betrag') return (a.betrag - b.betrag) * dir;
+    if (k === 'kategorie') return (((cat(a.catId) || {}).name || '').localeCompare((cat(b.catId) || {}).name || '')) * dir;
+    if (k === 'person') return (personName(a.personId).localeCompare(personName(b.personId))) * dir;
+    if (k === 'text') return ((a.text || '').localeCompare(b.text || '')) * dir;
+    if (k === 'typ') return a.typ.localeCompare(b.typ) * dir;
+    return a.datum.localeCompare(b.datum) * dir;
+  });
+  return rows;
+}
+
+function renderTable() {
+  $('tblMonthLabel').textContent = monthLabel(ui.month);
+  $('tablePager').classList.toggle('hidden', ui.viewMode !== 'monat');
+  $('rangeWrap').classList.toggle('hidden', ui.viewMode !== 'alle');
+  $('modeMonat').className = 'pillbtn' + (ui.viewMode === 'monat' ? ' active-green' : '');
+  $('modeAlle').className = 'pillbtn' + (ui.viewMode === 'alle' ? ' active-green' : '');
+
+  $('theadRow').innerHTML = COLS.map(([k, label]) => {
+    const ind = ui.sortKey === k ? (ui.sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+    return `<th data-sort="${k}" style="text-align: ${k === 'betrag' ? 'right' : 'left'};">${label}${ind}</th>`;
+  }).join('') + '<th></th>';
+
+  const rows = visibleRows();
+  $('tbody').innerHTML = rows.map(t => {
+    const c = cat(t.catId);
+    const datumFmt = new Date(t.datum + 'T12:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const ein = t.typ === 'einnahme';
+    return `<tr>
+      <td style="white-space: nowrap;">${datumFmt}</td>
+      <td>${esc(t.text || '–')}</td>
+      <td><span class="tag ${ein ? 'tag-accent' : 'tag-neutral'}">${esc(c ? c.name : '?')}</span></td>
+      <td class="text-muted" style="white-space: nowrap;">${esc(personName(t.personId))}</td>
+      <td class="text-muted">${ein ? 'Einnahme' : 'Ausgabe'}</td>
+      <td style="text-align: right; font-weight: 600; white-space: nowrap; color: var(${ein ? '--color-accent-700' : '--color-accent-2-700'});">${(ein ? '+' : '−') + fmt(t.betrag).replace('-', '')}</td>
+      <td style="text-align: right; white-space: nowrap;">
+        <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${esc(t.id)}">Bearbeiten</button>
+        <button class="btn btn-ghost btn-sm danger" data-act="del" data-id="${esc(t.id)}">Löschen</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  $('noRows').classList.toggle('hidden', rows.length > 0);
+  $('rowCount').textContent = rows.length + ' Buchungen';
+  const sumView = rows.reduce((a, t) => a + (t.typ === 'einnahme' ? t.betrag : -t.betrag), 0);
+  $('sumView').textContent = fmt(sumView);
+}
+
+/* ── Render: Budgets ────────────────────────────────────────────────────── */
+function renderBudgets() {
+  $('budMonthLabel').textContent = monthLabel(ui.month);
+  const spent = spentByCat(ui.month);
+  $('budgetList').innerHTML = data.cats.filter(c => c.typ === 'ausgabe').map(c => {
+    const budget = data.budgets[c.id] || 0;
+    const sp = spent[c.id] || 0;
+    const pct = budget > 0 ? sp / budget * 100 : 0;
+    const over = pct > 100, warned = pct >= WARN_PCT;
+    const color = over ? 'var(--color-accent-2-700)' : warned ? 'var(--color-accent-2-400)' : 'var(--color-accent-500)';
+    const status = budget > 0
+      ? fmt(sp) + ' von ' + fmt(budget) + (over ? ' – überschritten!' : ' (' + Math.round(pct) + ' %)')
+      : (sp > 0 ? fmt(sp) + ' – kein Budget' : 'kein Budget');
+    return `<div class="budget-row">
+      <span class="budget-name">${esc(c.name)}</span>
+      <div class="budget-mid">
+        <div class="budget-track"><div class="budget-fill" style="width: ${Math.min(100, Math.round(pct))}%; background: ${color};"></div></div>
+        <span class="budget-status">${esc(status)}</span>
+      </div>
+      <input class="input" type="number" min="0" step="10" data-budget-cat="${esc(c.id)}" value="${budget || ''}" style="width: 100px; text-align: right;" placeholder="–">
+    </div>`;
+  }).join('');
+}
+
+/* ── Render: Daueraufträge ──────────────────────────────────────────────── */
+function renderRec() {
+  $('recList').innerHTML = data.rec.map(r => {
+    const c = cat(r.catId);
+    const ein = r.typ === 'einnahme';
+    return `<div class="rec-row">
+      <label class="radio"><input type="checkbox" data-rec-toggle="${esc(r.id)}"${r.aktiv ? ' checked' : ''}><span style="font-weight: 600;">${esc(r.name)}</span></label>
+      <span class="tag ${ein ? 'tag-accent' : 'tag-neutral'}">${esc(c ? c.name : '?')}</span>
+      <span class="rec-day">${esc(personName(r.personId))}</span>
+      <span class="rec-day">am ${r.tag}. des Monats</span>
+      <span class="rec-spacer"></span>
+      <strong style="white-space: nowrap; color: var(${ein ? '--color-accent-700' : '--color-accent-2-700'});">${(ein ? '+' : '−') + fmt(r.betrag)}</strong>
+      <button class="btn btn-ghost btn-sm danger" data-rec-del="${esc(r.id)}">Löschen</button>
+    </div>`;
+  }).join('');
+}
+
+/* ── Render: Kategorien ─────────────────────────────────────────────────── */
+function renderCats() {
+  const mk = (c, tagClass) =>
+    `<span class="tag ${tagClass}">${esc(c.name)}<button class="tag-x" data-cat-del="${esc(c.id)}" title="Löschen">×</button></span>`;
+  $('catsAus').innerHTML = data.cats.filter(c => c.typ === 'ausgabe').map(c => mk(c, 'tag-accent-2')).join('');
+  $('catsEin').innerHTML = data.cats.filter(c => c.typ === 'einnahme').map(c => mk(c, 'tag-accent')).join('');
+}
+
+/* ── Render: Personen ───────────────────────────────────────────────────── */
+function renderPersons() {
+  $('personList').innerHTML = data.persons.map(p =>
+    `<span class="tag tag-neutral">${esc(p.name)}<button class="tag-x" data-person-del="${esc(p.id)}" title="Löschen">×</button></span>`).join('');
+}
+
+/* ── Render: Einstellungen ──────────────────────────────────────────────── */
+function renderSettings() {
+  $('toggleBudgets').checked = data.settings.showBudgets !== false;
+}
+
+/* ── Render: alles ──────────────────────────────────────────────────────── */
+function renderAll() {
+  renderHeader(); renderSidebar(); renderNav();
+  renderUebersicht(); renderForm(); renderCatSelects(); renderPersonSelects();
+  renderTable(); renderBudgets(); renderRec(); renderCats(); renderPersons(); renderSettings();
+}
+function renderMonthDependent() {
+  renderSidebar(); renderUebersicht(); renderTable(); renderBudgets();
+}
+
+/* ── CSV-Export ─────────────────────────────────────────────────────────── */
+function exportCsv() {
+  const lines = ['Datum;Typ;Kategorie;Beschreibung;Betrag;Person'];
+  data.tx.slice().sort((a, b) => a.datum.localeCompare(b.datum)).forEach(t => {
+    const c = cat(t.catId);
+    const pn = (person(t.personId) || {}).name || '';
+    lines.push([
+      t.datum,
+      t.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe',
+      c ? c.name : '',
+      '"' + (t.text || '').replace(/"/g, '""') + '"',
+      String(t.betrag.toFixed(2)).replace('.', ','),
+      '"' + pn.replace(/"/g, '""') + '"'
+    ].join(';'));
+  });
+  const blob = new Blob([String.fromCharCode(0xFEFF) + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'haushaltsbuch-' + todayISO() + '.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ── CSV-Import ─────────────────────────────────────────────────────────── */
+function splitCsv(line, delim) {
+  const out = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQ) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += ch; }
+    else if (ch === '"') inQ = true;
+    else if (ch === delim) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur); return out;
+}
+
+function importFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = reader.result.replace(new RegExp('^' + String.fromCharCode(0xFEFF)), '');
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (!lines.length) { alert('0 Buchungen importiert.'); return; }
+    const delim = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
+    let added = 0;
+    lines.forEach((line, i) => {
+      const parts = splitCsv(line, delim);
+      if (i === 0 && /datum/i.test(parts[0])) return;
+      if (parts.length < 5) return;
+      const [datum, typRaw, katName, text2, betragRaw, personRaw] = parts;
+      if (!/^\d{4}-\d{2}-\d{2}/.test(datum)) return;
+      const typ = /ein/i.test(typRaw) ? 'einnahme' : 'ausgabe';
+      const betrag = parseFloat(betragRaw.replace(/\./g, '').replace(',', '.'));
+      if (!(betrag > 0)) return;
+      let c = data.cats.find(x => x.name.toLowerCase() === katName.trim().toLowerCase());
+      if (!c) { c = { id: uid(), name: katName.trim() || 'Sonstiges', typ, custom: true }; data.cats.push(c); }
+      let pid = defaultPersonId();
+      if (personRaw && personRaw.trim()) {
+        let p = data.persons.find(x => x.name.toLowerCase() === personRaw.trim().toLowerCase());
+        if (!p) { p = { id: uid(), name: personRaw.trim() }; data.persons.push(p); }
+        pid = p.id;
+      }
+      data.tx.push({ id: uid(), datum: datum.slice(0, 10), typ, catId: c.id, text: text2, betrag, personId: pid });
+      added++;
+    });
+    save(); renderAll();
+    alert(added + ' Buchungen importiert.');
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+/* ── Events ─────────────────────────────────────────────────────────────── */
+// Navigation
+$('mainNav').addEventListener('click', e => {
+  const b = e.target.closest('.navbtn'); if (!b) return;
+  ui.section = b.dataset.section;
+  renderNav();
+});
+
+// Monats-Pager (Übersicht + Tabelle)
+document.querySelectorAll('[data-shift]').forEach(b => b.addEventListener('click', () => {
+  const [y, m] = ui.month.split('-').map(Number);
+  const d = new Date(y, m - 1 + Number(b.dataset.shift), 1);
+  ui.month = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderMonthDependent();
+}));
+
+// Formular: Typ-Umschalter
+$('typAus').addEventListener('click', () => { ui.fTyp = 'ausgabe'; renderForm(); fillSelect($('fCat'), data.cats.filter(c => c.typ === 'ausgabe'), ''); });
+$('typEin').addEventListener('click', () => { ui.fTyp = 'einnahme'; renderForm(); fillSelect($('fCat'), data.cats.filter(c => c.typ === 'einnahme'), ''); });
+
+// Formular: Absenden / Abbrechen
+$('submitBtn').addEventListener('click', () => {
+  const betrag = parseFloat(String($('fBetrag').value).replace(',', '.'));
+  const datum = $('fDatum').value;
+  if (!(betrag > 0) || !datum) { alert('Bitte Betrag und Datum angeben.'); return; }
+  const catId = $('fCat').value || (data.cats.find(c => c.typ === ui.fTyp) || {}).id;
+  const personId = $('fPerson').value || defaultPersonId();
+  const text = $('fText').value;
+  if (ui.editId) {
+    const t = data.tx.find(x => x.id === ui.editId);
+    if (t) Object.assign(t, { typ: ui.fTyp, betrag, datum, catId, text, personId });
+  } else {
+    data.tx.push({ id: uid(), typ: ui.fTyp, betrag, datum, catId, text, personId });
+  }
+  ui.editId = null;
+  $('fBetrag').value = ''; $('fText').value = '';
+  save(); renderAll();
+});
+$('cancelBtn').addEventListener('click', () => {
+  ui.editId = null;
+  $('fBetrag').value = ''; $('fText').value = '';
+  renderForm();
+});
+
+// Tabelle: Sortierung
+$('theadRow').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]'); if (!th) return;
+  const k = th.dataset.sort;
+  ui.sortDir = (ui.sortKey === k && ui.sortDir === 'desc') ? 'asc' : 'desc';
+  ui.sortKey = k;
+  renderTable();
+});
+
+// Tabelle: Bearbeiten / Löschen
+$('tbody').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const t = data.tx.find(x => x.id === b.dataset.id); if (!t) return;
+  if (b.dataset.act === 'edit') {
+    ui.editId = t.id; ui.fTyp = t.typ; ui.section = 'buchungen';
+    renderNav(); renderForm();
+    fillSelect($('fCat'), data.cats.filter(c => c.typ === t.typ), t.catId);
+    fillSelect($('fPerson'), data.persons, t.personId || defaultPersonId());
+    $('fBetrag').value = String(t.betrag);
+    $('fDatum').value = t.datum;
+    $('fText').value = t.text || '';
+    $('sec-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    const datumFmt = new Date(t.datum + 'T12:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    askConfirm('Buchung löschen', '„' + (t.text || '–') + '“ vom ' + datumFmt + ' über ' + fmt(t.betrag) + ' wirklich löschen?').then(ok => {
+      if (!ok) return;
+      data.tx = data.tx.filter(x => x.id !== t.id);
+      save(); renderAll();
+    });
+  }
+});
+
+// Filter
+$('modeMonat').addEventListener('click', () => { ui.viewMode = 'monat'; renderTable(); });
+$('modeAlle').addEventListener('click', () => { ui.viewMode = 'alle'; renderTable(); });
+['fQ', 'fFCat', 'fFPerson', 'fFTyp', 'fVon', 'fBis'].forEach(id => {
+  $(id).addEventListener('input', renderTable);
+  $(id).addEventListener('change', renderTable);
+});
+
+// CSV
+$('exportBtn').addEventListener('click', exportCsv);
+$('importBtn').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', importFile);
+
+// Budgets
+$('budgetList').addEventListener('change', e => {
+  const inp = e.target.closest('input[data-budget-cat]'); if (!inp) return;
+  const v = parseFloat(String(inp.value).replace(',', '.'));
+  if (v > 0) data.budgets[inp.dataset.budgetCat] = v;
+  else delete data.budgets[inp.dataset.budgetCat];
+  save(); renderBudgets();
+});
+
+// Daueraufträge
+$('recList').addEventListener('change', e => {
+  const cb = e.target.closest('input[data-rec-toggle]'); if (!cb) return;
+  const r = data.rec.find(x => x.id === cb.dataset.recToggle); if (!r) return;
+  r.aktiv = !r.aktiv;
+  save();
+  if (r.aktiv) applyRecurring();
+  renderAll();
+});
+$('recList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-rec-del]'); if (!b) return;
+  const r = data.rec.find(x => x.id === b.dataset.recDel); if (!r) return;
+  askConfirm('Dauerauftrag löschen', '„' + r.name + '“ (' + fmt(r.betrag) + ' am ' + r.tag + '. des Monats) wirklich löschen? Bereits erstellte Buchungen bleiben erhalten.').then(ok => {
+    if (!ok) return;
+    data.rec = data.rec.filter(x => x.id !== r.id);
+    save(); renderAll();
+  });
+});
+$('rTyp').addEventListener('change', () => fillSelect($('rCat'), data.cats.filter(c => c.typ === $('rTyp').value), ''));
+$('addRecBtn').addEventListener('click', () => {
+  const name = $('rName').value.trim();
+  const betrag = parseFloat(String($('rBetrag').value).replace(',', '.'));
+  if (!name || !(betrag > 0)) { alert('Bitte Name und Betrag angeben.'); return; }
+  const typ = $('rTyp').value;
+  const catId = $('rCat').value || (data.cats.find(c => c.typ === typ) || {}).id;
+  const personId = $('rPerson').value || defaultPersonId();
+  const tag = Math.min(28, Math.max(1, parseInt($('rTag').value) || 1));
+  data.rec.push({ id: uid(), name, betrag, typ, catId, personId, tag, aktiv: true, von: ui.month });
+  $('rName').value = ''; $('rBetrag').value = '';
+  save(); applyRecurring(); renderAll();
+});
+
+// Personen
+$('addPersonBtn').addEventListener('click', () => {
+  const name = $('pName').value.trim();
+  if (!name) return;
+  data.persons.push({ id: uid(), name });
+  $('pName').value = '';
+  save(); renderAll();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-person-del]'); if (!b) return;
+  const p = person(b.dataset.personDel); if (!p) return;
+  if (data.persons.length <= 1) {
+    showInfo('Löschen nicht möglich', 'Es muss mindestens eine Person geben.');
+    return;
+  }
+  const nTx = data.tx.filter(t => t.personId === p.id).length;
+  const nRec = data.rec.filter(r => r.personId === p.id).length;
+  let msg = 'Person „' + p.name + '“ wirklich löschen?';
+  if (nTx || nRec) {
+    const parts = [];
+    if (nTx) parts.push(nTx + (nTx === 1 ? ' Buchung' : ' Buchungen'));
+    if (nRec) parts.push(nRec + (nRec === 1 ? ' Dauerauftrag' : ' Daueraufträgen'));
+    msg += ' Sie ist ' + parts.join(' und ') + ' zugeordnet; diese bleiben erhalten (Person wird als „—“ angezeigt).';
+  }
+  askConfirm('Person löschen', msg).then(ok => {
+    if (!ok) return;
+    data.persons = data.persons.filter(x => x.id !== p.id);
+    save(); renderAll();
+  });
+});
+
+// Kategorien
+$('addCatBtn').addEventListener('click', () => {
+  const name = $('kName').value.trim();
+  if (!name) return;
+  data.cats.push({ id: uid(), name, typ: $('kTyp').value, custom: true });
+  $('kName').value = '';
+  save(); renderAll();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-cat-del]'); if (!b) return;
+  const c = cat(b.dataset.catDel); if (!c) return;
+  if (data.cats.filter(x => x.typ === c.typ).length <= 1) {
+    showInfo('Löschen nicht möglich', 'Die letzte Kategorie dieses Typs kann nicht gelöscht werden.');
+    return;
+  }
+  const nTx = data.tx.filter(t => t.catId === c.id).length;
+  const nRec = data.rec.filter(r => r.catId === c.id).length;
+  let msg = 'Kategorie „' + c.name + '“ wirklich löschen?';
+  if (nTx || nRec) {
+    const parts = [];
+    if (nTx) parts.push(nTx + (nTx === 1 ? ' Buchung' : ' Buchungen'));
+    if (nRec) parts.push(nRec + (nRec === 1 ? ' Dauerauftrag' : ' Daueraufträgen'));
+    msg += ' Sie wird von ' + parts.join(' und ') + ' verwendet; diese bleiben erhalten (Kategorie wird als „?“ angezeigt).';
+  }
+  askConfirm('Kategorie löschen', msg).then(ok => {
+    if (!ok) return;
+    data.cats = data.cats.filter(x => x.id !== c.id);
+    delete data.budgets[c.id];
+    save(); renderAll();
+  });
+});
+$('clearAllBtn').addEventListener('click', () => {
+  askConfirm('Alle Daten löschen', 'Wirklich alle Buchungen, Budgets und Daueraufträge löschen? Dies kann nicht rückgängig gemacht werden.', { confirmLabel: 'Alles löschen' }).then(ok => {
+    if (!ok) return;
+    data = seed();
+    saveNow(); renderAll();
+  });
+});
+
+// Einstellung: Budgets ein-/ausblenden
+$('toggleBudgets').addEventListener('change', () => {
+  data.settings.showBudgets = $('toggleBudgets').checked;
+  save(); renderAll();
+});
+
+// Datendatei wechseln (bzw. im Memory-Modus: JSON sichern)
+$('switchFileBtn').addEventListener('click', () => {
+  if (persistMode === 'fs') renderPickerOverlay(true);
+  else downloadJson();
+});
+
+// JSON-Import im Memory-Fallback
+$('jsonInput').addEventListener('change', e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try { data = normalize(JSON.parse(reader.result.replace(/^﻿/, ''))); }
+    catch (err) { showInfo('Fehler', 'Die JSON-Datei konnte nicht gelesen werden.'); return; }
+    hideOverlay(); startApp();
+  };
+  reader.readAsText(file);
+});
+
+/* ── Start-Overlay & Boot ───────────────────────────────────────────────── */
+function showOverlay() { $('startOverlay').classList.remove('hidden'); }
+function hideOverlay() { $('startOverlay').classList.add('hidden'); }
+function setOverlay(text, buttons) {
+  $('startText').textContent = text;
+  const wrap = $('startActions'); wrap.innerHTML = '';
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'btn ' + (b.primary ? 'btn-primary' : 'btn-secondary');
+    el.textContent = b.label;
+    el.addEventListener('click', b.onClick);
+    wrap.appendChild(el);
+  });
+  showOverlay();
+}
+
+function renderPickerOverlay(isSwitch) {
+  setOverlay(
+    isSwitch
+      ? 'Wähle eine andere Datendatei aus oder lege eine neue an. Beim Anlegen wird der aktuelle Stand hineingeschrieben; beim Öffnen wird er durch den Inhalt der gewählten Datei ersetzt.'
+      : 'Wo sollen deine Haushaltsbuch-Daten gespeichert werden? Der Dialog öffnet im Ordner „Dokumente“ und schlägt „' + DATA_FILENAME + '“ vor. Danach wird nach jeder Änderung automatisch in diese Datei gespeichert – nichts landet im Browser.',
+    [
+      { label: 'Neue Datendatei anlegen', primary: true, onClick: () => pick('new') },
+      { label: 'Bestehende Datei öffnen', onClick: () => pick('open') },
+      ...(isSwitch ? [{ label: 'Abbrechen', onClick: hideOverlay }] : [])
+    ]
+  );
+}
+
+function renderReconnectOverlay(handle) {
+  setOverlay(
+    'Deine Datendatei „' + handle.name + '“ ist noch verknüpft. Bestätige den Zugriff, um weiterzuarbeiten.',
+    [
+      { label: 'Fortsetzen', primary: true, onClick: async () => {
+          try { await useHandle(handle, true); hideOverlay(); startApp(); }
+          catch (e) { showInfo('Fehler', e && e.message ? e.message : String(e)).then(() => renderPickerOverlay()); }
+        } },
+      { label: 'Andere Datei wählen', onClick: () => renderPickerOverlay() }
+    ]
+  );
+}
+
+function renderFallbackOverlay() {
+  persistMode = 'memory';
+  setOverlay(
+    'Dein Browser unterstützt keine direkte Datei-Speicherung (dafür Chrome oder Edge nutzen). Du kannst eine vorhandene JSON-Datei laden; zum Sichern exportierst du die Daten anschließend über „Daten als JSON sichern“.',
+    [
+      { label: 'JSON-Datei laden', primary: true, onClick: () => $('jsonInput').click() },
+      { label: 'Leer starten', onClick: () => { data = seed(); hideOverlay(); startApp(); } }
+    ]
+  );
+  updateFileInfo();
+}
+
+async function pick(kind) {
+  try {
+    let handle;
+    if (kind === 'new') handle = await window.showSaveFilePicker({ suggestedName: DATA_FILENAME, startIn: 'documents', types: [JSON_TYPE] });
+    else [handle] = await window.showOpenFilePicker({ startIn: 'documents', types: [JSON_TYPE], multiple: false });
+    await useHandle(handle, kind === 'open');
+    hideOverlay(); startApp();
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;   // Dialog abgebrochen
+    showInfo('Fehler', 'Die Datei konnte nicht verwendet werden: ' + (e && e.message ? e.message : e));
+  }
+}
+
+let booted = false;
+function startApp() {
+  if (!booted) { booted = true; $('fDatum').value = todayISO(); }
+  applyRecurring();
+  renderAll();
+}
+
+async function initPersistence() {
+  // Desktop-App (Electron): Datei im Programmordner, ohne Nachfrage.
+  if (window.hbNative) {
+    persistMode = 'native';
+    try { nativePath = await window.hbNative.path(); } catch (e) { nativePath = ''; }
+    let txt = null;
+    try { txt = await window.hbNative.load(); } catch (e) {}
+    if (txt) {
+      try { data = normalize(JSON.parse(txt.replace(/^﻿/, ''))); }
+      catch (e) { data = seed(); }
+    } else {
+      data = seed();
+    }
+    try { await persistWrite(); } catch (e) {}   // legt Datei beim ersten Start an
+    updateFileInfo();
+    hideOverlay();
+    startApp();
+    return;
+  }
+  if (!window.showSaveFilePicker) { renderFallbackOverlay(); return; }
+  let handle = null;
+  try { handle = await idbHandle('get'); } catch (e) {}
+  if (handle) {
+    let perm = 'prompt';
+    try { perm = await handle.queryPermission({ mode: 'readwrite' }); } catch (e) {}
+    if (perm === 'granted') {
+      try { await useHandle(handle, true); startApp(); return; }
+      catch (e) { /* Datei weg/defekt → unten neu wählen */ }
+    }
+    renderReconnectOverlay(handle);
+    return;
+  }
+  renderPickerOverlay();
+}
+
+renderAll();          // leeres Grundgerüst hinter dem Overlay
+initPersistence();
+</script>
+</body>
+</html>
