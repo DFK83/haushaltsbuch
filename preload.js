@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('hbNative', {
   load: () => ipcRenderer.invoke('hb-load'),
   save: (text) => ipcRenderer.invoke('hb-save', text),
   path: () => ipcRenderer.invoke('hb-path'),
+  version: () => ipcRenderer.invoke('hb-version'),
   // JSON-Datenbank exportieren/importieren
   exportJson: (text) => ipcRenderer.invoke('hb-export', text),
   importJson: () => ipcRenderer.invoke('hb-import'),

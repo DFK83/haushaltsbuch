@@ -178,6 +178,8 @@ ipcMain.handle('hb-save', (_e, text) => {
 
 ipcMain.handle('hb-path', () => dataFilePath());
 
+ipcMain.handle('hb-version', () => app.getVersion());
+
 // JSON-Datenbank an einen gewählten Ort exportieren.
 ipcMain.handle('hb-export', async (_e, text) => {
   try {

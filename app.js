@@ -1141,6 +1141,9 @@ function setUpdateStatus(txt) { const el = $('updateStatus'); if (el) el.textCon
 function setupUpdateUI() {
   if (!window.hbNative || !window.hbNative.onUpdate) return;
   $('updateBox').classList.remove('hidden');
+  if (window.hbNative.version) {
+    window.hbNative.version().then(v => { $('appVersion').textContent = v || '–'; }).catch(() => {});
+  }
   window.hbNative.onUpdate((p) => {
     if (!p) return;
     if (p.state === 'checking') setUpdateStatus('Suche nach Updates …');
