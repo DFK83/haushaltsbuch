@@ -192,4 +192,11 @@ Buchungen, Kategorien und Personen werden nach einer Rückfrage gelöscht. Hast 
 
 ---
 
+## Lizenz
+
+Dieses Programm steht unter der **MIT-Lizenz** – eine freie Open-Source-Lizenz.
+Du darfst es kostenlos nutzen, weitergeben und anpassen; der Copyright-Hinweis
+muss dabei erhalten bleiben. Den vollständigen Text findest du in der Datei
+[LICENSE](LICENSE).
+
 © 2026 Daniel Kronawitter

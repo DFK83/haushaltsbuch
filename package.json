@@ -3,7 +3,7 @@
   "version": "1.0.9",
   "description": "Haushaltsbuch – lokale Einnahmen- und Ausgabenverwaltung",
   "author": "Daniel Kronawitter",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
