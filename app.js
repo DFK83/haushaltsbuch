@@ -131,16 +131,18 @@ function updateFileInfo(msg) {
   if (persistMode === 'native') {
     const fname = (nativePath.split(/[\\/]/).pop()) || DATA_FILENAME;
     $('fileInfo').textContent = msg ? msg : '📄 ' + fname;
-    $('katFootNote').textContent = 'Alle Daten werden automatisch im Programmordner gespeichert' + (nativePath ? ' (' + nativePath + ')' : '') + '. Kein Browser-Speicher.';
+    $('katFootNote').textContent = 'Alle Daten werden automatisch gespeichert' + (nativePath ? ' (' + nativePath + ')' : '') + '. Kein Browser-Speicher.';
     $('switchFileBtn').classList.add('hidden');
   } else if (persistMode === 'fs') {
     $('fileInfo').textContent = msg ? msg : '📄 ' + fileHandle.name;
     $('katFootNote').textContent = 'Alle Daten liegen in der Datei „' + fileHandle.name + '“ (Ordner Dokumente o. Ä.) und werden nach jeder Änderung automatisch gespeichert. Kein Browser-Speicher.';
     $('switchFileBtn').textContent = 'Datendatei wechseln';
+    $('switchFileBtn').classList.remove('hidden');
   } else {
     $('fileInfo').textContent = '⚠ Kein Datei-Zugriff';
     $('katFootNote').textContent = 'Dein Browser kann keine lokale Datei beschreiben – sichere die Daten manuell als JSON.';
     $('switchFileBtn').textContent = 'Daten als JSON sichern';
+    $('switchFileBtn').classList.remove('hidden');
   }
 }
 
@@ -397,8 +399,14 @@ function fillSelect(sel, cats, keep, extraFirst) {
   if (prev && !orphan && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
+// Füllt das Kategorie-Feld der Buchung und hängt die Option „+ Neue Kategorie …" an,
+// damit man beim Buchen direkt eine neue Kategorie anlegen kann.
+function fillCatSelect(keep) {
+  fillSelect($('fCat'), data.cats.filter(c => c.typ === ui.fTyp), keep);
+  $('fCat').insertAdjacentHTML('beforeend', '<option value="__newcat__">+ Neue Kategorie …</option>');
+}
 function renderCatSelects() {
-  fillSelect($('fCat'), data.cats.filter(c => c.typ === ui.fTyp));
+  fillCatSelect();
   fillSelect($('fFCat'), data.cats, undefined, '<option value="">Alle Kategorien</option>');
   fillSelect($('rCat'), data.cats.filter(c => c.typ === $('rTyp').value));
 }
@@ -671,15 +679,33 @@ document.querySelectorAll('[data-yshift]').forEach(b => b.addEventListener('clic
 }));
 
 // Formular: Typ-Umschalter
-$('typAus').addEventListener('click', () => { ui.fTyp = 'ausgabe'; renderForm(); fillSelect($('fCat'), data.cats.filter(c => c.typ === 'ausgabe'), ''); });
-$('typEin').addEventListener('click', () => { ui.fTyp = 'einnahme'; renderForm(); fillSelect($('fCat'), data.cats.filter(c => c.typ === 'einnahme'), ''); });
+$('typAus').addEventListener('click', () => { ui.fTyp = 'ausgabe'; renderForm(); fillCatSelect(''); });
+$('typEin').addEventListener('click', () => { ui.fTyp = 'einnahme'; renderForm(); fillCatSelect(''); });
+
+// Neue Kategorie direkt beim Buchen anlegen (Option „+ Neue Kategorie …").
+let lastCatValue = '';
+$('fCat').addEventListener('focus', () => { if ($('fCat').value !== '__newcat__') lastCatValue = $('fCat').value; });
+$('fCat').addEventListener('change', () => {
+  if ($('fCat').value !== '__newcat__') { lastCatValue = $('fCat').value; return; }
+  askName('Neue Kategorie', '').then(name => {
+    if (!name) { fillCatSelect(lastCatValue); return; }
+    if (nameExists(data.cats.filter(c => c.typ === ui.fTyp), name)) {
+      showInfo('Name schon vergeben', 'Es gibt bereits eine ' + (ui.fTyp === 'einnahme' ? 'Einnahme' : 'Ausgabe') + '-Kategorie „' + name + '“.');
+      fillCatSelect(lastCatValue); return;
+    }
+    const c = { id: uid(), name, typ: ui.fTyp, custom: true };
+    data.cats.push(c); save();
+    fillCatSelect(c.id); renderCats();
+  });
+});
 
 // Formular: Absenden / Abbrechen
 $('submitBtn').addEventListener('click', () => {
   const betrag = parseFloat(String($('fBetrag').value).replace(',', '.'));
   const datum = $('fDatum').value;
   if (!(betrag > 0) || !datum) { alert('Bitte Betrag und Datum angeben.'); return; }
-  const catId = $('fCat').value || (data.cats.find(c => c.typ === ui.fTyp) || {}).id;
+  let catId = $('fCat').value;
+  if (!catId || catId === '__newcat__') catId = (data.cats.find(c => c.typ === ui.fTyp) || {}).id;
   const personId = $('fPerson').value || defaultPersonId();
   const text = $('fText').value;
   if (ui.editId) {
@@ -721,7 +747,7 @@ $('tbody').addEventListener('click', e => {
   if (b.dataset.act === 'edit') {
     ui.editId = t.id; ui.fTyp = t.typ; ui.section = 'buchungen';
     renderNav(); renderForm();
-    fillSelect($('fCat'), data.cats.filter(c => c.typ === t.typ), t.catId);
+    fillCatSelect(t.catId);
     fillSelect($('fPerson'), data.persons, t.personId || defaultPersonId());
     $('fBetrag').value = String(t.betrag);
     $('fDatum').value = t.datum;
@@ -749,6 +775,50 @@ $('modeAlle').addEventListener('click', () => { ui.viewMode = 'alle'; renderTabl
 $('exportBtn').addEventListener('click', exportCsv);
 $('importBtn').addEventListener('click', () => $('fileInput').click());
 $('fileInput').addEventListener('change', importFile);
+
+// JSON-Datenbank: Export / Import (vollständige Sicherung)
+$('exportJsonBtn').addEventListener('click', async () => {
+  const text = JSON.stringify(data, null, 2);
+  if (window.hbNative && window.hbNative.exportJson) {
+    const r = await window.hbNative.exportJson(text);
+    if (r && r.ok) showInfo('Export erfolgreich', 'Die Daten wurden gespeichert:\n' + r.path);
+    else if (r && !r.canceled) showInfo('Export fehlgeschlagen', String((r && r.error) || 'Unbekannter Fehler'));
+  } else {
+    downloadJson();
+  }
+});
+$('importJsonBtn').addEventListener('click', async () => {
+  if (window.hbNative && window.hbNative.importJson) {
+    const r = await window.hbNative.importJson();
+    if (!r || !r.ok) { if (r && !r.canceled) showInfo('Import fehlgeschlagen', String((r && r.error) || 'Unbekannter Fehler')); return; }
+    applyImportedJson(r.text);
+  } else {
+    $('jsonFileInput').click();
+  }
+});
+$('jsonFileInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => applyImportedJson(String(reader.result));
+  reader.readAsText(f);
+  e.target.value = '';
+});
+// Importierte JSON-Datenbank prüfen, bestätigen und übernehmen.
+function applyImportedJson(text) {
+  let parsed;
+  try { parsed = JSON.parse(String(text).replace(/^﻿/, '')); }
+  catch (e) { showInfo('Import fehlgeschlagen', 'Die Datei ist keine gültige JSON-Datei.'); return; }
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.tx)) {
+    showInfo('Import fehlgeschlagen', 'Die Datei enthält keine gültigen Haushaltsbuch-Daten.'); return;
+  }
+  askConfirm('Daten importieren', 'Die aktuellen Daten werden vollständig durch den Import ersetzt. Fortfahren?', { confirmLabel: 'Importieren', danger: false })
+    .then(ok => {
+      if (!ok) return;
+      data = normalize(parsed);
+      saveNow(); renderAll();
+      showInfo('Import erfolgreich', 'Die Daten wurden übernommen.');
+    });
+}
 
 // Budgets
 $('budgetList').addEventListener('change', e => {
@@ -1005,10 +1075,40 @@ function startApp() {
   renderAll();
 }
 
+// In-App-Updater: Statusanzeige und Buttons in den Einstellungen verdrahten.
+function setUpdateStatus(txt) { const el = $('updateStatus'); if (el) el.textContent = txt || ''; }
+function setupUpdateUI() {
+  if (!window.hbNative || !window.hbNative.onUpdate) return;
+  $('updateBox').classList.remove('hidden');
+  window.hbNative.onUpdate((p) => {
+    if (!p) return;
+    if (p.state === 'checking') setUpdateStatus('Suche nach Updates …');
+    else if (p.state === 'available') setUpdateStatus('Version ' + p.version + ' wird heruntergeladen …');
+    else if (p.state === 'downloading') setUpdateStatus('Lädt … ' + (p.percent != null ? p.percent + '%' : ''));
+    else if (p.state === 'downloaded') { setUpdateStatus('Version ' + p.version + ' ist bereit.'); $('updateInstallBtn').classList.remove('hidden'); }
+    else if (p.state === 'none') setUpdateStatus('Du hast die aktuelle Version.');
+    else if (p.state === 'error') setUpdateStatus('Update derzeit nicht möglich (offline?).');
+  });
+  $('updateCheckBtn').addEventListener('click', async () => {
+    setUpdateStatus('Suche nach Updates …');
+    try {
+      const r = await window.hbNative.updateCheck();
+      if (r && r.supported === false) setUpdateStatus('Automatische Updates gibt es nur in der installierten Version.');
+      else if (r && r.error) setUpdateStatus('Update derzeit nicht möglich (offline?).');
+      // Verfügbar/aktuell melden die Update-Events.
+    } catch (e) { setUpdateStatus('Update derzeit nicht möglich.'); }
+  });
+  $('updateInstallBtn').addEventListener('click', () => {
+    setUpdateStatus('Installiere …');
+    window.hbNative.updateInstall();
+  });
+}
+
 async function initPersistence() {
   // Desktop-App (Electron): Datei im Programmordner, ohne Nachfrage.
   if (window.hbNative) {
     persistMode = 'native';
+    setupUpdateUI();
     try { nativePath = await window.hbNative.path(); } catch (e) { nativePath = ''; }
     let txt = null;
     try { txt = await window.hbNative.load(); } catch (e) {}

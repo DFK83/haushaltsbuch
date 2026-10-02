@@ -533,6 +533,7 @@ dialog.confirm-dlg::backdrop {
           <button class="btn btn-secondary" id="exportBtn">CSV exportieren</button>
           <button class="btn btn-secondary" id="importBtn">CSV importieren</button>
           <input type="file" accept=".csv,text/csv" id="fileInput" class="hidden">
+          <input type="file" accept=".json,application/json" id="jsonFileInput" class="hidden">
         </div>
         <div class="filterbar">
           <div class="pillgroup">
@@ -631,9 +632,20 @@ dialog.confirm-dlg::backdrop {
         <h3 class="sec-h" style="margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--color-neutral-300);">Anzeige</h3>
         <label class="radio" style="font-size: 14px;"><input type="checkbox" id="toggleBudgets"><span>Budgets in der Navigation anzeigen</span></label>
 
+        <div id="updateBox" class="hidden">
+          <h3 class="sec-h" style="margin: 22px 0 10px; padding-top: 18px; border-top: 1px solid var(--color-neutral-300);">Updates</h3>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <button class="btn btn-secondary" id="updateCheckBtn">Nach Updates suchen</button>
+            <button class="btn btn-primary hidden" id="updateInstallBtn">Jetzt installieren</button>
+            <span id="updateStatus" class="text-muted" style="font-size: 13px;"></span>
+          </div>
+        </div>
+
         <div class="kat-foot">
-          <p id="katFootNote">Alle Daten liegen in deiner Datendatei. Sichere sie regelmäßig per CSV-Export.</p>
-          <button class="btn btn-secondary" id="switchFileBtn">Datendatei wechseln</button>
+          <p id="katFootNote">Alle Daten liegen in deiner Datendatei. Sichere sie regelmäßig per Export.</p>
+          <button class="btn btn-secondary" id="exportJsonBtn">Daten exportieren</button>
+          <button class="btn btn-secondary" id="importJsonBtn">Daten importieren</button>
+          <button class="btn btn-secondary hidden" id="switchFileBtn">Datendatei wechseln</button>
           <button class="btn btn-ghost danger" id="clearAllBtn">Alle Daten löschen</button>
         </div>
       </section>

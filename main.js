@@ -113,7 +113,11 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // Sandbox aus: das Preload muss die Datei-Bruecke (window.hbNative) zuverlaessig
+      // bereitstellen, damit automatisch gespeichert wird. Der Renderer laedt nur
+      // lokale, vertrauenswuerdige Inhalte und ist per strikter CSP abgesichert.
+      sandbox: false
     }
   };
   // Gemerkte Position nur übernehmen, wenn sie auf einem Bildschirm liegt.
@@ -174,31 +178,70 @@ ipcMain.handle('hb-save', (_e, text) => {
 
 ipcMain.handle('hb-path', () => dataFilePath());
 
-// ── Auto-Update (nur installierte Version) ───────────────────────────────
-// Prüft beim Start auf eine neuere Version in den GitHub-Releases, lädt sie im
-// Hintergrund und bietet nach dem Download einen Neustart zum Installieren an.
-// Die Portable-EXE kann sich nicht selbst aktualisieren und wird übersprungen;
-// Fehler (offline, keine Rechte) werden still ignoriert.
+// JSON-Datenbank an einen gewählten Ort exportieren.
+ipcMain.handle('hb-export', async (_e, text) => {
+  try {
+    const win = BrowserWindow.getAllWindows()[0] || null;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Daten exportieren',
+      defaultPath: 'haushaltsbuch-' + stamp + '.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (r.canceled || !r.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(r.filePath, String(text), 'utf8');
+    return { ok: true, path: r.filePath };
+  } catch (err) { return { ok: false, error: String((err && err.message) || err) }; }
+});
+
+// JSON-Datenbank aus einer gewählten Datei importieren (Inhalt an den Renderer geben).
+ipcMain.handle('hb-import', async () => {
+  try {
+    const win = BrowserWindow.getAllWindows()[0] || null;
+    const r = await dialog.showOpenDialog(win, {
+      title: 'Daten importieren',
+      properties: ['openFile'],
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (r.canceled || !r.filePaths || !r.filePaths[0]) return { ok: false, canceled: true };
+    const text = fs.readFileSync(r.filePaths[0], 'utf8');
+    return { ok: true, text };
+  } catch (err) { return { ok: false, error: String((err && err.message) || err) }; }
+});
+
+// ── In-App-Update (nur installierte Version) ─────────────────────────────
+// Prüft beim Start und auf Knopfdruck auf eine neuere GitHub-Release, lädt sie
+// im Hintergrund und installiert sie auf Wunsch still aus der App heraus
+// (ohne Installer-Fenster). Der Fortschritt wird an die Oberfläche gemeldet.
+// Portable/Entwicklung können sich nicht selbst aktualisieren.
+function sendUpdate(payload) {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) win.webContents.send('hb-update', payload);
+}
 function setupAutoUpdate() {
-  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+  const updatable = app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR;
+  ipcMain.handle('hb-update-check', async () => {
+    if (!updatable) return { supported: false };
+    try {
+      const r = await autoUpdater.checkForUpdates();
+      return { supported: true, version: r && r.updateInfo && r.updateInfo.version };
+    } catch (e) { return { supported: true, error: String((e && e.message) || e) }; }
+  });
+  // Stille Installation (kein Installer-Fenster), direkt aus der App.
+  ipcMain.handle('hb-update-install', () => {
+    if (!updatable) return false;
+    autoUpdater.quitAndInstall(true, true);
+    return true;
+  });
+  if (!updatable) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.on('update-downloaded', (info) => {
-    const win = BrowserWindow.getAllWindows()[0] || null;
-    dialog.showMessageBox(win, {
-      type: 'info',
-      buttons: ['Jetzt neu starten', 'Später'],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true,
-      title: 'Update verfügbar',
-      message: 'Version ' + info.version + ' wurde heruntergeladen.',
-      detail: 'Soll Haushaltsbuch jetzt neu gestartet und aktualisiert werden? ' +
-              'Andernfalls wird das Update beim nächsten Beenden installiert.'
-    }).then((r) => { if (r.response === 0) autoUpdater.quitAndInstall(); })
-      .catch(() => { /* Dialog-Fehler ignorieren */ });
-  });
-  autoUpdater.on('error', () => { /* offline / nicht erreichbar → still */ });
+  autoUpdater.on('checking-for-update', () => sendUpdate({ state: 'checking' }));
+  autoUpdater.on('update-available', (info) => sendUpdate({ state: 'available', version: info.version }));
+  autoUpdater.on('update-not-available', () => sendUpdate({ state: 'none' }));
+  autoUpdater.on('download-progress', (p) => sendUpdate({ state: 'downloading', percent: Math.round(p.percent) }));
+  autoUpdater.on('update-downloaded', (info) => sendUpdate({ state: 'downloaded', version: info.version }));
+  autoUpdater.on('error', (e) => sendUpdate({ state: 'error', error: String((e && e.message) || e) }));
   autoUpdater.checkForUpdates().catch(() => { /* Netzwerkfehler ignorieren */ });
 }
 
