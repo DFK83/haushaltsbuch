@@ -30,7 +30,8 @@
       "main.js",
       "preload.js",
       "icon.ico",
-      "fonts/**/*"
+      "fonts/*.woff2",
+      "fonts/*.OFL.txt"
     ],
     "directories": {
       "output": "dist"
