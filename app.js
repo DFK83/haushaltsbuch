@@ -50,6 +50,7 @@ const ui = {
   section: 'uebersicht',
   month: todayISO().slice(0, 7),
   year: new Date().getFullYear(),
+  yearPerson: '', yearCat: '',
   viewMode: 'monat',
   sortKey: 'datum', sortDir: 'desc',
   fTyp: 'ausgabe',
@@ -551,23 +552,80 @@ function renderSettings() {
 }
 
 /* ── Render: alles ──────────────────────────────────────────────────────── */
+// Buchungen des gewählten Jahres unter Berücksichtigung der Jahr-Filter.
+function yearTx() {
+  return data.tx.filter(t =>
+    Number(t.datum.slice(0, 4)) === ui.year &&
+    (!ui.yearPerson || t.personId === ui.yearPerson) &&
+    (!ui.yearCat || t.catId === ui.yearCat));
+}
 function renderYear() {
   const y = ui.year;
   $('jahrLabel').textContent = String(y);
-  let tEin = 0, tAus = 0;
-  const rows = [];
+  fillSelect($('jahrFPerson'), data.persons, ui.yearPerson, '<option value="">Alle Personen</option>');
+  fillSelect($('jahrFCat'), data.cats, ui.yearCat, '<option value="">Alle Kategorien</option>');
+
+  const tx = yearTx();
+  // Monatswerte
+  const months = [];
   for (let m = 1; m <= 12; m++) {
-    const mk = y + '-' + String(m).padStart(2, '0');
-    const { ein, aus } = monthSums(mk);
-    tEin += ein; tAus += aus;
-    const name = new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long' });
-    rows.push(`<tr><td>${esc(name)}</td><td>${fmt(ein)}</td><td>${fmt(aus)}</td><td>${fmt(ein - aus)}</td></tr>`);
+    const mt = tx.filter(t => Number(t.datum.slice(5, 7)) === m);
+    months.push({
+      name: new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'long' }),
+      short: new Date(y, m - 1, 1).toLocaleDateString('de-DE', { month: 'short' }),
+      ein: sumTyp(mt, 'einnahme'), aus: sumTyp(mt, 'ausgabe')
+    });
   }
-  rows.push(`<tr style="font-weight: 700; border-top: 2px solid var(--color-divider);"><td>Summe</td><td>${fmt(tEin)}</td><td>${fmt(tAus)}</td><td>${fmt(tEin - tAus)}</td></tr>`);
-  $('jahrTable').innerHTML = rows.join('');
+  const tEin = months.reduce((a, m) => a + m.ein, 0);
+  const tAus = months.reduce((a, m) => a + m.aus, 0);
   $('jahrEin').textContent = fmt(tEin);
   $('jahrAus').textContent = fmt(tAus);
   $('jahrSaldo').textContent = fmt(tEin - tAus);
+
+  // Statistiken
+  $('statAvgEin').textContent = fmt(tEin / 12);
+  $('statAvgAus').textContent = fmt(tAus / 12);
+  $('statSpar').textContent = (tEin > 0 ? Math.round((tEin - tAus) / tEin * 100) : 0) + '%';
+  const catSpent = {};
+  tx.filter(t => t.typ === 'ausgabe').forEach(t => { catSpent[t.catId] = (catSpent[t.catId] || 0) + t.betrag; });
+  const catEntries = Object.entries(catSpent).sort((a, b) => b[1] - a[1]);
+  $('statTopCat').textContent = catEntries.length ? ((cat(catEntries[0][0]) || {}).name || '?') : '–';
+  // Bester / schwächster Monat nach Saldo (nur Monate mit Buchungen)
+  const withData = months.map((m, i) => ({ i, s: m.ein - m.aus, any: m.ein || m.aus })).filter(m => m.any);
+  if (withData.length) {
+    const best = withData.reduce((a, b) => b.s > a.s ? b : a);
+    const worst = withData.reduce((a, b) => b.s < a.s ? b : a);
+    $('jahrStatsNote').textContent = 'Bester Monat: ' + months[best.i].name + ' (' + fmt(best.s) + ') · Schwächster: ' + months[worst.i].name + ' (' + fmt(worst.s) + ')';
+  } else {
+    $('jahrStatsNote').textContent = 'Noch keine Buchungen in diesem Jahr.';
+  }
+
+  // Ausgaben nach Kategorie (Pivot über das Jahr)
+  const maxCat = Math.max(1, ...catEntries.map(e => e[1]));
+  $('jahrCatBars').innerHTML = catEntries.map(([id, v]) => `
+    <div class="catbar-row">
+      <span class="catbar-name">${esc((cat(id) || {}).name || '?')}</span>
+      <div class="catbar-track"><div class="catbar-fill" style="width: ${Math.round(v / maxCat * 100)}%;"></div></div>
+      <span class="catbar-amt">${fmt(v)}</span>
+    </div>`).join('');
+  $('jahrNoCat').classList.toggle('hidden', catEntries.length > 0);
+
+  // Monatsverlauf-Diagramm
+  const maxM = Math.max(1, ...months.map(m => Math.max(m.ein, m.aus)));
+  const h = v => Math.max(3, Math.round(v / maxM * 110));
+  $('jahrChart').innerHTML = months.map(m => `
+    <div class="trend-col">
+      <div class="trend-bars">
+        <div class="trend-bar" style="background: var(--color-accent-500); height: ${h(m.ein)}px;" title="Einnahmen"></div>
+        <div class="trend-bar" style="background: var(--color-accent-2-500); height: ${h(m.aus)}px;" title="Ausgaben"></div>
+      </div>
+      <span class="trend-label">${esc(m.short)}</span>
+    </div>`).join('');
+
+  // Monatstabelle
+  const rows = months.map(m => `<tr><td>${esc(m.name)}</td><td>${fmt(m.ein)}</td><td>${fmt(m.aus)}</td><td>${fmt(m.ein - m.aus)}</td></tr>`);
+  rows.push(`<tr style="font-weight: 700; border-top: 2px solid var(--color-divider);"><td>Summe</td><td>${fmt(tEin)}</td><td>${fmt(tAus)}</td><td>${fmt(tEin - tAus)}</td></tr>`);
+  $('jahrTable').innerHTML = rows.join('');
 }
 function renderAll() {
   renderHeader(); renderSidebar(); renderNav();
@@ -677,6 +735,9 @@ document.querySelectorAll('[data-yshift]').forEach(b => b.addEventListener('clic
   ui.year += Number(b.dataset.yshift);
   renderYear();
 }));
+// Jahr-Filter (Person / Kategorie)
+$('jahrFPerson').addEventListener('change', () => { ui.yearPerson = $('jahrFPerson').value; renderYear(); });
+$('jahrFCat').addEventListener('change', () => { ui.yearCat = $('jahrFCat').value; renderYear(); });
 
 // Formular: Typ-Umschalter
 $('typAus').addEventListener('click', () => { ui.fTyp = 'ausgabe'; renderForm(); fillCatSelect(''); });

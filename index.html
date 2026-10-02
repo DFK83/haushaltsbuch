@@ -271,6 +271,10 @@ main { flex: 1; min-width: 0; padding: 10px 32px 40px; display: flex; flex-direc
 .kpi { border-radius: var(--radius-md); padding: 14px 18px; }
 .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; }
 .kpi-num { font-size: 24px; font-weight: 700; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+.stat { background: var(--color-neutral-100); border-radius: var(--radius-md); padding: 12px 14px; }
+.stat-num { font-size: 18px; font-weight: 700; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 720px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 .ueb-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 28px; margin-top: 22px; }
 .ueb-col { display: flex; flex-direction: column; gap: 10px; }
 .catbar-list { display: flex; flex-direction: column; gap: 8px; }
@@ -480,6 +484,8 @@ dialog.confirm-dlg::backdrop {
       <section class="card hidden" id="sec-jahr">
         <div class="card-head">
           <h2 class="card-h">Jahresübersicht</h2>
+          <select class="input" id="jahrFPerson" style="width: 160px;" aria-label="Nach Person filtern"></select>
+          <select class="input" id="jahrFCat" style="width: 180px;" aria-label="Nach Kategorie filtern"></select>
           <div class="pager">
             <button class="btn btn-ghost btn-pager" data-yshift="-1" aria-label="Vorheriges Jahr">‹</button>
             <strong id="jahrLabel">–</strong>
@@ -491,6 +497,31 @@ dialog.confirm-dlg::backdrop {
           <div class="kpi" style="background: var(--color-accent-2-100);"><div class="kpi-label">Ausgaben</div><div class="kpi-num" style="color: var(--color-accent-2-800);" id="jahrAus">0,00&nbsp;€</div></div>
           <div class="kpi" style="background: var(--color-surface);"><div class="kpi-label">Saldo Jahr</div><div class="kpi-num" id="jahrSaldo">0,00&nbsp;€</div></div>
         </div>
+
+        <div class="stat-grid">
+          <div class="stat"><div class="kpi-label">Ø Einnahmen/Monat</div><div class="stat-num" id="statAvgEin">0,00&nbsp;€</div></div>
+          <div class="stat"><div class="kpi-label">Ø Ausgaben/Monat</div><div class="stat-num" id="statAvgAus">0,00&nbsp;€</div></div>
+          <div class="stat"><div class="kpi-label">Sparquote</div><div class="stat-num" id="statSpar">0%</div></div>
+          <div class="stat"><div class="kpi-label">Top-Ausgabe</div><div class="stat-num" id="statTopCat">–</div></div>
+        </div>
+        <p class="empty-note" id="jahrStatsNote" style="margin-top: 10px;"></p>
+
+        <div class="ueb-grid">
+          <div class="ueb-col">
+            <h3 class="sec-h">Ausgaben nach Kategorie</h3>
+            <div class="catbar-list" id="jahrCatBars"></div>
+            <p class="empty-note hidden" id="jahrNoCat">Keine Ausgaben in diesem Jahr.</p>
+          </div>
+          <div class="ueb-col">
+            <h3 class="sec-h">Monatsverlauf</h3>
+            <div class="trend-wrap" id="jahrChart"></div>
+            <div class="legend">
+              <span><i style="background: var(--color-accent-500);"></i>Einnahmen</span>
+              <span><i style="background: var(--color-accent-2-500);"></i>Ausgaben</span>
+            </div>
+          </div>
+        </div>
+
         <div class="person-ov">
           <h3 class="sec-h">Monate</h3>
           <div class="table-scroll">
