@@ -179,10 +179,10 @@ Beim Aktualisieren von einer älteren Version werden deine vorhandenen Daten aut
 ## Häufige Fragen
 
 **Brauche ich Internet?**
-Nein. Das Programm funktioniert komplett offline. Nur die automatische Update-Suche braucht kurz eine Verbindung – ohne Internet passiert einfach nichts.
+Nein. Das Programm funktioniert komplett offline. Nur die Update-Suche baut kurz eine Verbindung zu **GitHub (Microsoft, USA)** auf, um nach einer neueren Version zu sehen – dabei ist deine IP-Adresse technisch für GitHub sichtbar. Sonst werden keine Daten übertragen, und ohne Internet passiert einfach nichts.
 
 **Sind meine Daten sicher / wer kann sie sehen?**
-Deine Daten verlassen deinen Rechner nicht. Es gibt keine Cloud und kein Konto. Für ein Backup exportierst du sie selbst.
+Deine Daten verlassen deinen Rechner nicht. Es gibt keine Cloud und kein Konto. Sie liegen **unverschlüsselt** als Datei in deinem Benutzerordner – dein Windows-Benutzerkonto schützt sie vor anderen Benutzern. Bei der Portable-Version liegt die Datei neben der EXE (z. B. auf dem USB-Stick); wer Zugriff auf den Stick hat, kann sie lesen. Für ein Backup exportierst du die Daten selbst.
 
 **Kann ich das Programm auf mehreren PCs nutzen?**
 Ja: Exportiere die Daten auf dem einen PC und importiere sie auf dem anderen. Oder nutze die Portable-Version auf einem USB-Stick.
@@ -192,11 +192,19 @@ Buchungen, Kategorien und Personen werden nach einer Rückfrage gelöscht. Hast 
 
 ---
 
-## Lizenz
+## Lizenz & Drittkomponenten
 
-Dieses Programm steht unter der **MIT-Lizenz** – eine freie Open-Source-Lizenz.
-Du darfst es kostenlos nutzen, weitergeben und anpassen; der Copyright-Hinweis
-muss dabei erhalten bleiben. Den vollständigen Text findest du in der Datei
-[LICENSE](LICENSE).
+Der **eigene Code** dieses Programms steht unter der **MIT-Lizenz** – eine freie
+Open-Source-Lizenz. Du darfst ihn kostenlos nutzen, weitergeben und anpassen;
+der Copyright-Hinweis muss erhalten bleiben. Vollständiger Text: [LICENSE](LICENSE).
+
+Mitgelieferte Komponenten von Dritten stehen unter **eigenen** Lizenzen:
+
+- **Schriften** Source Sans 3 und Source Serif 4 – SIL Open Font License 1.1
+  (© Adobe bzw. The Source Serif 4 Project Authors). Lizenztexte im Ordner `fonts/`.
+- **Electron** und **Chromium** (die Technik, auf der die App läuft) – MIT, BSD u. a.;
+  die Lizenztexte liegen im Programmordner (`LICENSE.electron.txt`, `LICENSES.chromium.html`).
+
+Eine Übersicht aller Drittkomponenten findest du in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 © 2026 Daniel Kronawitter
