@@ -1,0 +1,93 @@
+name: Release
+
+# Baut die App bei einem Versions-Tag (z. B. v1.0.9), signiert die EXE über
+# SignPath (sobald konfiguriert) und veröffentlicht ein GitHub-Release.
+# Ohne SignPath-Secrets wird unsigniert veröffentlicht (wie bisher).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write        # Release anlegen
+  id-token: write        # von SignPath für die Build-Provenance benötigt
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Version ermitteln
+        id: ver
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: App bauen (unsigniert)
+        run: npm run dist
+
+      # Die zu signierenden Installer als CI-Artefakt hochladen (SignPath lädt es von hier).
+      - name: Installer hochladen
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers
+          path: |
+            dist/Haushaltsbuch-Setup-${{ steps.ver.outputs.version }}-x64.exe
+            dist/Haushaltsbuch-Portable.exe
+
+      # Nur wenn SignPath eingerichtet ist (Secret vorhanden): signieren.
+      - name: Ist SignPath konfiguriert?
+        id: cfg
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.SIGNPATH_API_TOKEN }}" ]; then echo "signing=true" >> "$GITHUB_OUTPUT"; else echo "signing=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Über SignPath signieren
+        if: steps.cfg.outputs.signing == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      # Nach dem Signieren ändert sich die EXE → latest.yml für electron-updater neu erzeugen,
+      # sonst schlägt die Update-Prüfung wegen falscher Prüfsumme fehl.
+      - name: Release-Dateien vorbereiten
+        id: prep
+        shell: bash
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          SIGNED: ${{ steps.cfg.outputs.signing }}
+        run: |
+          mkdir -p release
+          SETUP="Haushaltsbuch-Setup-${VERSION}-x64.exe"
+          if [ "$SIGNED" = "true" ]; then
+            cp "signed/${SETUP}" "release/${SETUP}"
+            cp "signed/Haushaltsbuch-Portable.exe" "release/Haushaltsbuch-Portable.exe"
+            node scripts/make-latest-yml.js "release/${SETUP}" "$VERSION" > "release/latest.yml"
+          else
+            cp "dist/${SETUP}" "release/${SETUP}"
+            cp "dist/Haushaltsbuch-Portable.exe" "release/Haushaltsbuch-Portable.exe"
+            cp "dist/latest.yml" "release/latest.yml"
+            if [ -f "dist/${SETUP}.blockmap" ]; then cp "dist/${SETUP}.blockmap" "release/"; fi
+          fi
+
+      - name: Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          fail_on_unmatched_files: true

@@ -37,8 +37,12 @@ Voraussetzung: [Node.js](https://nodejs.org/) (LTS)
 ```bash
 npm install
 npm start      # App starten
-npm run dist   # Installer + Portable-EXE nach dist/ bauen
+npm run dist   # Installer + Portable-EXE nach dist/ bauen (unsigniert, zum Testen)
 ```
+
+Releases werden per Versions-Tag (`git tag v1.2.3 && git push origin v1.2.3`) über
+GitHub Actions gebaut und veröffentlicht. Zum Signieren der EXE (gegen die
+SmartScreen-Warnung) siehe [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md).
 
 ## Aufbau
 
